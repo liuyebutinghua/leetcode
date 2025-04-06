@@ -48,3 +48,26 @@ public:
 确认完滑动窗口后最关键的就是，移动左窗口的条件。以这题，题目的目的为无重复字符的最长子串，那么移动左窗口的条件就是子串中出现了重复字符，只要出现的重复字符就向右移动窗口，直到窗口中的字符重新满足条件。
 那么新的问题出现了，如何判断窗口中是否存在重复字符——哈希表，哈希表可以快速判断是否存在重复字符，只要把窗口中的数字存入到哈希表中即可。当左窗口移动时把离开窗口的字符从哈希表中取出。
 */
+
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        int result = 0,left=0,right=0;
+        unordered_map<char, int> m_map;
+        while(right<s.size())
+        {
+            if (m_map.count(s[right]) == 0)//m_map中没有找到，添加进m_map ，右边框向右移动一个位置
+            {
+                m_map[s[right]]++;
+                right++;
+            }
+            else//m_map中找到重复值，左边框向右移动一位
+            {
+                m_map.erase(s[left]);
+                left++;
+            }
+            result = max((int)m_map.size(), result);
+        }
+        return result;
+    }
+};
