@@ -1,0 +1,37 @@
+//自己的代码(超出时间限制)，使用暴力解法，时间复杂度O(n的平方)
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        int result = 0;
+        for (int i = 0; i < s.size(); i++)
+        {
+            unordered_map<char, int> m_map;
+            int length = 0;
+
+            for (int j = i; j < s.size(); j++)
+            {
+                char str = s[j];
+                auto ad = m_map.find(str);
+                if (ad == m_map.end())
+                {
+                    m_map[s[j]]++;
+                    length++;
+                    if (j == s.size() - 1)
+                    {
+                        result = result > length ? result : length;
+                        m_map.clear();
+                        length = 0;
+                    }
+                }
+                else
+                {
+                    result = result > length ? result : length;
+                    m_map.clear();
+                    length = 0;
+                    continue;
+                }
+            }
+        }
+        return result;
+    }
+};
