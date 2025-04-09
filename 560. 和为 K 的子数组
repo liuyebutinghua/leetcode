@@ -1,0 +1,120 @@
+/*
+560. 和为 K 的子数组
+*/
+
+class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        int n = nums.size();
+        unordered_map<int,int> mp;
+        int cnt = 0;
+        int preSum = 0;
+        mp[0] = 1;
+        for (int val:nums) {
+            //preSum为左闭右闭当前元素的前缀和
+            preSum += val;
+            //如果找到了 说明有区间存在 和两数之和中遍历过程中找nums - target是一个道理
+            if (mp.find(preSum - k) != mp.end()) {
+                //加上出现的次数
+                cnt += mp[preSum - k];
+            }
+            //不管是否找到 都插入mp中
+            mp[preSum]++;
+        }
+        return cnt;
+    }
+};
+
+/*
+
+1.这道题第一想法就是枚举每个元素 向后累加 判断是否为子数组 超时
+
+class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        int cnt = 0;
+        for (int i = 0;i < nums.size();i++) { //枚举左端点
+            int sum = 0;
+            for (int j = i;j < nums.size();j++) {//枚举右边界
+                sum += nums[j];
+                if (sum == k) cnt++;
+            }
+        }
+        return cnt;
+    }
+};
+2.前缀和
+
+1.构造前缀和数组需要明白prefixSum[i]的含义 
+    prefixSum[i] = nums[i - 1] + nums[i - 2] + ... + nums[0]
+2.prefixSum[0] = 0
+3.由1得prefixSum[0]表示nums[0 - 1]是无意义的 只是为了可以统一计算
+
+    nums = [4,2,5,2]
+prefixSum= [0,4,6,11,13]
+所以本题中prefixSum[i]就是下标为0 - i的nums的数组和
+那么prefixSum[i] - prefixSum[j]就是下标为j - i的nums的数组和
+也就是我们想找的子数组为k的答案
+
+class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        vector<int> prefixSum;
+        int n = nums.size();
+        prefixSum.resize(n + 1);
+        prefixSum[0] = 0;
+        int cnt = 0;
+        for (int i = 0;i < n;i++) {
+            prefixSum[i + 1] = prefixSum[i] + nums[i]; //前缀和
+            for (int j = 0;j <= i;j++) {
+                if (prefixSum[i + 1] - k == prefixSum[j]) cnt++;
+            }
+        }
+        return cnt;
+    }
+};
+3.使用hashTable动态维护前缀和
+
+因为用vector维护前缀和 时间复杂度会到O(n^2) 用hash优化
+c++中采用unordered_map达到去重并存储键值对
+
+复杂度
+时间复杂度:
+
+O(n) 遍历一次nums
+
+空间复杂度:
+
+O(n) 主要为hashTable维护前缀和所带来的额外空间
+
+Code
+class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        int n = nums.size();
+        unordered_map<int,int> mp;
+        int cnt = 0;
+        int preSum = 0;
+        mp[0] = 1;
+        for (int val:nums) {
+            //preSum为左闭右闭当前元素的前缀和
+            preSum += val;
+            //如果找到了 说明有区间存在 和两数之和中遍历过程中找nums - target是一个道理
+            if (mp.find(preSum - k) != mp.end()) {
+                //加上出现的次数
+                cnt += mp[preSum - k];
+            }
+            //不管是否找到 都插入mp中
+            mp[preSum]++;
+        }
+        return cnt;
+    }
+};
+
+
+
+*/
+
+
+
+
