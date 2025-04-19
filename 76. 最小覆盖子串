@@ -1,0 +1,57 @@
+/*
+76. 最小覆盖子串    使用滑窗的思想
+*/
+char* minWindow(char* s, char* t) {
+	int slen = strlen(s);
+	int tlen = strlen(t);
+	int left = 0, right = 0, r_count = INT_MAX,start=0;
+	int map[256] = { 0 };
+
+	for (int i = 0; i < tlen; i++)
+		map[t[i]]++;
+	
+	for (left = 0, right = 0; right < slen; right++)
+	{
+		if (map[s[right]]-- > 0)//这个在s中的字符是t中需要的
+			tlen--;
+
+		while (tlen == 0)//此时已经在已经遍历的s上面找到了所有t的字符
+		{
+			int count = right - left + 1;
+
+			if (r_count > count)
+			{
+				r_count = count;
+				start = left;
+			}
+			if (++map[s[left]] > 0)//找到已经遍历的字符串中的第一个有用的字符
+				tlen++;
+			left++;
+		}
+	}
+
+	
+	if (r_count != INT_MAX)//找到最小字符串
+	{
+		char* ans = (char*)malloc(sizeof(char) * (r_count + 1));//加一的原因是字符串需要添加一个'\0'结尾
+		*ans = '\0';
+		strncat(ans, start + s, r_count);
+		return ans;
+	}
+	else
+	{
+		char* ans = (char*)malloc(sizeof(char) * (1));//加一的原因是字符串需要添加一个'\0'结尾
+		*ans = '\0';
+		return ans;
+	}
+
+}
+
+
+
+
+
+
+
+
+
