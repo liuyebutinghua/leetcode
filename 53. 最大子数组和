@@ -1,0 +1,28 @@
+/*
+53. 最大子数组和(贪心算法)
+*/
+int maxSubArray(int* nums, int numsSize) {
+    // 初始化当前子数组和与全局最大和
+    int current_sum = nums[0];
+    int max_sum = nums[0];
+
+    // 遍历数组
+    for (int i = 1; i < numsSize; i++) {
+        // 更新当前子数组和
+        if (current_sum < 0) {
+            current_sum = nums[i]; // 如果当前子数组和小于 0，则重置为当前元素
+        }
+        else {
+            current_sum += nums[i]; // 否则加上当前元素
+        }
+
+        // 更新全局最大和
+        if (current_sum > max_sum) {
+            max_sum = current_sum;
+        }
+    }
+
+    return max_sum;
+}
+
+
