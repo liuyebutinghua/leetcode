@@ -1,0 +1,46 @@
+/*
+56. 合并区间
+这道题主要参考：贪心算法和大神写的代码，自己对c语言还是太浅，还需要继续学习
+bilibili:【贪心算法，思路不难想，但代码不好写！LeetCode:738.单调自增的数字】https://www.bilibili.com/video/BV1Kv4y1x7tP?vd_source=dda139f023c5a11b2f1289f1a0813142
+*/
+
+int cmpfunc(const void* a, const void* b)//无类型常量指针
+{
+    int** arr = (int**)a;
+    int** brr = (int**)b;
+    return (arr[0][0]> brr[0][0]);
+}
+
+int** merge(int** intervals, int intervalsSize, int* intervalsColSize, int* returnSize, int** returnColumnSizes) {
+    int** ans = (int**)malloc(sizeof(int*)* intervalsSize);//给ans争取最大的存储空间，保证存储数据时不会超出；
+    *returnColumnSizes = (int*)malloc(sizeof(int) * intervalsSize);//给returnColumnSizes争取最大的存储空间
+    for (int i = 0; i < intervalsSize; i++)
+    {
+        ans[i] = (int*)malloc(sizeof(int) * 2);
+        (*returnColumnSizes)[i] = 2;
+    }
+
+    qsort(intervals, intervalsSize,sizeof(intervals[0]), cmpfunc);//比较左边界
+
+
+    //添加第一个进ans
+    ans[0] = intervals[0];
+    int count = 1;
+    for (int i = 1; i < intervalsSize; i++)
+    {
+        if (intervals[i][0] > ans[count - 1][1])//表示独立
+        {
+            ans[count] = intervals[i];
+            count++;
+        }
+        else//需要合并
+        {
+            ans[count - 1][1] = ans[count - 1][1] > intervals[i][1] ? ans[count - 1][1] : intervals[i][1];//更新右边界
+        }
+    }
+
+    *returnSize = count;
+    return ans;
+}
+
+
