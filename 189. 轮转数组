@@ -1,0 +1,38 @@
+/*
+189. 轮转数组
+解题思路：
+首先对整个数组实行翻转，这样子原数组中需要翻转的子数组，就会跑到数组最前面。
+这时候，从 k 处分隔数组，左右两数组，各自进行翻转即可。
+
+原理如下：
+这个方法的本质是一个复杂的置换矩阵可以被分解为多个简单的置换矩阵，这样说比较抽象。
+我们换个思路，定义字符串的逆运算 r，r(a) 就表示被字符串 a 反转后的串，
+我们发现这个 r 跟矩阵的逆运算有一样的性质，满足 r(r(a)) = a 和 r(ab) = r(b)r(a)。
+我们的目标是得到 ba（原字符串是 ab），那么 ba = r(r(b))r(r(a))=r(r(a)r(b))，
+也就是我们的答案了。
+*/
+void rotate(int* nums, int numsSize, int k) {
+    int k_true = k%numsSize;//k可能大于numsSize，会出现索引超出，k_true表示为真正要移动的步数
+
+    for (int i = 0; i < numsSize/2; i++)//1.对整体进行翻转
+    {
+        int temp = nums[i];
+        nums[i] = nums[numsSize - i - 1];
+        nums[numsSize - i - 1] = temp;
+    }
+
+    for (int i = 0; i < k_true / 2; i++)//2.对前k进行翻转
+    {
+        int temp = nums[i];
+        nums[i] = nums[k_true - i - 1];
+        nums[k_true - i - 1] = temp;
+    }
+
+    for (int i = 0; i < (numsSize - k_true)/ 2; i++)//1.对后numsSize-k进行翻转
+    {
+        int temp = nums[i+ k_true];
+        nums[i+ k_true] = nums[numsSize - i - 1];
+        nums[numsSize - i - 1] = temp;
+    }
+
+}
