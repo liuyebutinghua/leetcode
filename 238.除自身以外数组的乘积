@@ -1,0 +1,47 @@
+/*
+238.除自身以外数组的乘积
+这里我写了两套思路：
+1.自己所写。先算出总的全部乘积，结果是总值除以在nums中对应的值，剩下的值。result[i]=zonghe/nums[i]。只有当nums[i]=0时，进行特例判断，再计算0的前缀和和后缀和。
+得到0值位置应该的结果。   这种办法时可行的，但是计算量较大。
+
+2.大佬所写
+提前求出左侧或者右侧前缀乘积，然后再从相反反向遍历获得另一侧前缀乘积，然后再将前后缀乘积相乘即可。
+
+这里只提供我写的代码，大佬所写的可以去看leetcode关于这题的解题部分
+*/
+
+
+int* productExceptSelf(int* nums, int numsSize, int* returnSize) {
+    int* result = (int*)malloc(sizeof(int)* numsSize);//在主程序记得free
+    int zonghe = 1;
+
+    for (int i = 0; i < numsSize; i++)//算出总的值
+    {
+        zonghe = zonghe * nums[i];
+    }
+
+    for (int i = 0; i < numsSize; i++)
+    {
+        int left_h = 1;
+        int right_h = 1;
+        if (0 == nums[i])//如果等于0
+        {
+            for (int j = 0; j < i; j++)
+            {
+                left_h = nums[j] * left_h;
+            }
+            for (int j = i + 1; j < numsSize; j++)
+            {
+                right_h = nums[j] * right_h;
+            }
+            result[i] = left_h * right_h;
+        }
+        else
+        {
+            result[i] = zonghe / nums[i];
+        }
+    }
+    *returnSize = numsSize;
+    return result;
+}
+
