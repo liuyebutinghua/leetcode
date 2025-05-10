@@ -1,0 +1,30 @@
+/*
+41. 缺失的第一个正数
+这个题目我自己的暴力解法，会超时，所以就看了大佬的解题思路
+思路链接：https://leetcode.cn/problems/first-missing-positive/solutions/7703/tong-pai-xu-python-dai-ma-by-liweiwei1419
+*/
+int firstMissingPositive(int* nums, int numsSize) {
+   // [3, 4, -1, 1]
+    for (int i = 0; i < numsSize; i++)
+    {
+        while (nums[i] >= 1 && nums[i] <= numsSize&& nums[i] != nums[nums[i] - 1])//交换的条件，
+        {
+            int index1=i;
+            int index2=nums[i] - 1;
+            int temp = nums[index1];
+            nums[index1] = nums[index2];
+            nums[index2] =temp;
+        }
+    }
+
+    for (int i = 0; i < numsSize; i++)
+    {
+        if (nums[i] != i + 1)
+        {
+            return i+1;
+        }
+    }
+    return numsSize + 1;
+}
+
+
