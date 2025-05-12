@@ -1,0 +1,44 @@
+/*
+73. 矩阵置零
+给定一个 m x n 的矩阵，如果一个元素为 0 ，则将其所在行和列的所有元素都设为 0 。请使用 原地 算法
+*/
+
+void setZeroes(int** matrix, int matrixSize, int* matrixColSize) {
+    int* map = (int*)malloc(sizeof(int) * (matrixSize + *matrixColSize));
+
+    for (int i = 0; i < matrixSize; i++)//扫描行
+    {
+        for (int j = 0; j < *matrixColSize; j++)//扫描每一行的内容，代表列
+        {
+            if (0 == matrix[i][j])
+            {
+                map[i] = 1;
+                map[j+ matrixSize] = 1;
+            }
+
+        }
+    }
+
+    for (int i = 0; i < matrixSize; i++)//行清零
+    {
+        if (map[i] == 1)
+        {
+            for (int j = 0; j < *matrixColSize; j++)
+            {
+                matrix[i][j] = 0;
+            }
+        }
+    }
+
+    for (int i = matrixSize; i < *matrixColSize+ matrixSize; i++)//列清零
+    {
+        if (map[i] == 1)
+        {
+            for (int j = 0; j < matrixSize; j++)
+            {
+                matrix[j][i- matrixSize] = 0;
+            }
+        }
+    }
+
+}
