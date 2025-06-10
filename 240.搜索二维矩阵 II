@@ -1,0 +1,147 @@
+/*
+240.搜索二维矩阵 II
+这里使用两种办法
+第一种是我自己手写的，先按照对角线进行查找，比较大小，在发现大于目标值时，再按列和按行查找
+
+
+*/
+//第一种
+bool searchMatrix(int** matrix, int matrixSize, int* matrixColSize, int target) {
+    //分成三种情况 
+
+    if (matrixSize == *matrixColSize)//第一种 m=n
+    {
+        for (int i = 0; i < matrixSize; i++)
+        {
+            if (matrix[i][i] >= target)
+            {
+                for (int j = i; j >= 0; j--)//检查行
+                {
+                    if (matrix[i][j] == target)
+                    {
+                        return true;
+                    }
+                }
+                for (int j = i; j >= 0; j--)//检查列
+                {
+                    if (matrix[j][i] == target)
+                    {
+                        return true;
+                    }
+                }
+                
+            }
+        }
+        return false;
+
+
+    }
+    else if (matrixSize > *matrixColSize)//第二种 m>n
+    {
+        for (int i = 0; i < *matrixColSize; i++)//检查有正方形中有没有
+        {
+            if (matrix[i][i] >= target)
+            {
+                for (int j = i; j >= 0; j--)//检查行
+                {
+                    if (matrix[i][j] == target)
+                    {
+                        return true;
+                    }
+                }
+                for (int j = i; j >= 0; j--)//检查列
+                {
+                    if (matrix[j][i] == target)
+                    {
+                        return true;
+                    }
+                }
+
+            }
+
+        }
+
+        for (int i = *matrixColSize; i < matrixSize; i++)//检查有正方形外有没有
+        {
+            if (matrix[i][*matrixColSize - 1] >= target)
+            {
+                for (int j = *matrixColSize - 1; j >= 0; j--)//检查行
+                {
+                    if (matrix[i][j] == target)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+        }
+        return false;
+
+    }
+    else//第三种 m<n
+    {
+        for (int i = 0; i < matrixSize; i++)//检查有正方形中有没有
+        {
+            if (matrix[i][i] >= target)
+            {
+                for (int j = i; j >= 0; j--)//检查行
+                {
+                    if (matrix[i][j] == target)
+                    {
+                        return true;
+                    }
+                }
+                for (int j = i; j >= 0; j--)//检查列
+                {
+                    if (matrix[j][i] == target)
+                    {
+                        return true;
+                    }
+                }
+
+            }
+
+        }
+
+        for (int i = matrixSize; i < *matrixColSize; i++)//检查有正方形外有没有
+        {
+            if (matrix[matrixSize-1][i] >= target)
+            {
+                for (int j = matrixSize - 1; j >= 0; j--)//检查行
+                {
+                    if (matrix[j][i] == target)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+        }
+        return false;
+    }
+
+}
+/*******************************************************************************************/
+//第二种
+bool searchMatrix(int** matrix, int matrixSize, int* matrixColSize, int target) {
+    if (matrix == NULL || matrixSize == 0 || *matrixColSize == 0) {
+        return false;
+    }
+
+    int row = 0;
+    int col = *matrixColSize - 1;
+
+    while (row < matrixSize && col >= 0) {
+        if (matrix[row][col] == target) {
+            return true;
+        } else if (matrix[row][col] > target) {
+            // 当前值太大，去掉当前列
+            col--;
+        } else {
+            // 当前值太小，去掉当前行
+            row++;
+        }
+    }
+
+    return false;
+}
