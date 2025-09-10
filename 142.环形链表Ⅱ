@@ -1,0 +1,51 @@
+
+struct ListNode* detectCycle(struct ListNode* head) {
+    //思路：使用快慢指针    结束条件  快指针=NULL   or  慢指针==快指针
+
+    if (head == NULL)
+        return NULL;
+
+    struct ListNode* f_p = head->next;//快指针   每次移动2个
+    struct ListNode* s_p = head;//慢指针         每次移动1个
+    while (f_p != s_p && f_p != NULL)
+    {
+        f_p = f_p->next;   
+        if (f_p != NULL)
+        {
+            f_p = f_p->next;
+        }
+        s_p = s_p->next;
+
+    }
+    
+    if (f_p == NULL)
+    {
+        return NULL;
+    }
+    //再定义一个变量 ，从重合点开始，绕点一周，计算圆的长度
+    int Circle_Length = 0;
+
+    struct ListNode* test = s_p;
+    do {
+        Circle_Length++;
+        test = test->next;
+    } while (test != f_p);
+
+    //让f_p和s_p恢复到head ,让f_p先走Circle_Length步  然后s_p再从头开始走，最终会在循环点相交
+    s_p = head;
+    f_p = head;
+
+    while (Circle_Length--)
+    {
+        f_p = f_p->next;
+    }
+
+
+    while (s_p != f_p)
+    {
+        f_p = f_p->next;
+        s_p = s_p->next;
+    }
+
+    return f_p;
+}
