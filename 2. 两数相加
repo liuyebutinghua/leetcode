@@ -1,0 +1,87 @@
+/
+使用遍历法，针对特殊情况进行设计
+
+/
+
+int my_sum(int num1,int num2,short * Decimal_sign)
+{
+    int sum = num1+ num2+*Decimal_sign;
+    if (sum >= 10)
+    {
+        sum = sum - 10;
+        *Decimal_sign = 1;
+    }
+    else
+    {
+        *Decimal_sign = 0;
+    }
+    return sum;
+
+}
+
+
+struct ListNode* addTwoNumbers(struct ListNode* l1, struct ListNode* l2) {
+    short Decimal_sign  = 0 ;
+    struct ListNode* ad1 = l1;
+    struct ListNode* ad2 = l2;
+    while (l1->next != NULL && l2->next != NULL)
+    {
+        l1->val = my_sum(l1->val, l2->val, &Decimal_sign);
+        l2->val = l1->val;
+        l1 = l1->next;
+        l2 = l2->next;
+    }
+    if (l1->next != NULL&& l2->next==NULL)
+    {
+        l1->val = my_sum(l1->val, l2->val, &Decimal_sign);
+        l1 = l1->next;
+        while (l1 != NULL)
+        {
+            l1->val = my_sum(l1->val, 0, &Decimal_sign);
+            if (l1->next == NULL&& Decimal_sign!=0)
+            {
+                static struct ListNode end;
+                end.next = NULL;
+                end.val = 1;
+                l1->next = &end;
+                return ad1;
+            }
+            l1 = l1->next;
+        }
+        return  ad1;
+    }
+    else if (l2->next != NULL && l1->next == NULL)
+    {
+        l2->val = my_sum(l1->val, l2->val, &Decimal_sign);
+        l2 = l2->next;
+        while (l2 != NULL)
+        {
+            l2->val = my_sum(0, l2->val, &Decimal_sign);
+            if (l2->next == NULL && Decimal_sign != 0)
+            {
+                static struct ListNode end;
+                end.next = NULL;
+                end.val = 1;
+                l2->next = &end;
+                return ad2;
+            }
+            l2 = l2->next;
+        }
+        return  ad2;
+    }
+    else 
+    {
+        l2->val = my_sum(l1->val, l2->val, &Decimal_sign);
+        if (Decimal_sign != 0)
+        {
+            static struct ListNode end;
+            end.next = NULL;
+            end.val = 1;
+            l2->next = &end;
+            return ad2;
+        }
+        return ad2;
+    }
+
+}
+
