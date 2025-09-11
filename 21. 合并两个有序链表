@@ -1,0 +1,311 @@
+// 方法一：迭代法（推荐）
+struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
+    // 创建虚拟头节点
+    struct ListNode dummy;
+    dummy.next = NULL;
+    struct ListNode* current = &dummy;  // 当前节点指针
+
+    while (list1 != NULL && list2 != NULL)   //利用虚拟头部，完成链表从小到大排列，直到有一个链表到头
+    {
+        if (list1->val <= list2->val)
+        {
+            current->next = list1;
+            list1 = list1->next;
+        }
+        else
+        {
+            current->next = list2;
+            list2 = list2->next;
+        }
+        current = current->next;
+    }
+    //防止有链表没有被遍历完，把剩余部分直接链接在后面
+    if (list1 != NULL)
+    {
+        current->next = list1;
+    }
+    if (list2 != NULL)
+    {
+        current->next = list2;
+    }
+
+    return dummy.next;
+}
+
+
+
+
+// 方法二：递归法
+struct ListNode* mergeTwoListsRecursive(struct ListNode* list1, struct ListNode* list2) {
+    // 基础情况
+    if (list1 == NULL) return list2;
+    if (list2 == NULL) return list1;
+    
+    // 递归情况
+    if (list1->val <= list2->val) {
+        list1->next = mergeTwoListsRecursive(list1->next, list2);
+        return list1;
+    } else {
+        list2->next = mergeTwoListsRecursive(list1, list2->next);
+        return list2;
+    }
+}
+
+/*
+# 递归思维完全指南
+
+## 1. 递归的本质：相信函数能解决问题
+
+### 核心思想
+递归就是：**把大问题分解成同类型的小问题，然后相信函数能解决小问题**
+
+```c
+// 合并链表的递归思维：
+// 大问题：合并两个链表
+// 小问题：选择一个较小的头节点，然后合并剩下的部分
+// 相信：mergeTwoLists函数能正确合并剩下的部分
+```
+
+### 递归三要素
+
+#### 1. 递归终止条件（Base Case）
+```c
+// 什么时候不需要再递归了？
+if (list1 == NULL) return list2;  // 一个链表为空，返回另一个
+if (list2 == NULL) return list1;
+```
+
+#### 2. 本层要做什么（Current Level）
+```c
+// 当前这一层需要做什么决定？
+if (list1->val <= list2->val) {
+    // 选择list1作为头节点
+} else {
+    // 选择list2作为头节点
+}
+```
+
+#### 3. 递归调用（Recursive Call）
+```c
+// 把剩下的问题交给函数自己处理
+list1->next = mergeTwoLists(list1->next, list2);
+```
+
+## 2. 递归的思维步骤
+
+### 步骤1：定义函数功能
+```c
+// 函数功能：输入两个有序链表，返回合并后的有序链表
+struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2)
+```
+
+### 步骤2：找最简单情况
+```
+最简单情况1：list1为空 → 返回list2
+最简单情况2：list2为空 → 返回list1
+```
+
+### 步骤3：相信函数能力
+```
+假设mergeTwoLists函数已经能正确工作
+那么mergeTwoLists(list1->next, list2)一定能返回正确结果
+```
+
+### 步骤4：处理当前层
+```
+我只需要决定：谁做头节点？
+较小的那个！然后把它的next指向递归结果
+```
+
+## 3. 递归执行过程图解
+
+### 示例：合并[1,2,4]和[1,3,4]
+
+```
+调用: mergeTwoLists([1,2,4], [1,3,4])
+├── 比较 1 <= 1，选择第一个1
+├── 返回 1 -> mergeTwoLists([2,4], [1,3,4])
+    ├── 比较 2 > 1，选择1
+    ├── 返回 1 -> mergeTwoLists([2,4], [3,4])
+        ├── 比较 2 < 3，选择2
+        ├── 返回 2 -> mergeTwoLists([4], [3,4])
+            ├── 比较 4 > 3，选择3
+            ├── 返回 3 -> mergeTwoLists([4], [4])
+                ├── 比较 4 <= 4，选择第一个4
+                ├── 返回 4 -> mergeTwoLists([], [4])
+                    └── 返回 [4]  // 基础情况
+                └── 结果: 4 -> [4] = [4,4]
+            └── 结果: 3 -> [4,4] = [3,4,4]
+        └── 结果: 2 -> [3,4,4] = [2,3,4,4]
+    └── 结果: 1 -> [2,3,4,4] = [1,2,3,4,4]
+└── 结果: 1 -> [1,2,3,4,4] = [1,1,2,3,4,4]
+```
+
+## 4. 递归调试技巧
+
+### 手动追踪法
+```c
+struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
+    printf("调用: mergeTwoLists(%p, %p)\n", list1, list2);
+    
+    if (list1 == NULL) {
+        printf("返回 list2\n");
+        return list2;
+    }
+    if (list2 == NULL) {
+        printf("返回 list1\n");  
+        return list1;
+    }
+    
+    if (list1->val <= list2->val) {
+        printf("选择 list1->val = %d\n", list1->val);
+        list1->next = mergeTwoLists(list1->next, list2);
+        return list1;
+    } else {
+        printf("选择 list2->val = %d\n", list2->val);
+        list2->next = mergeTwoLists(list1, list2->next);
+        return list2;
+    }
+}
+```
+
+### 纸笔模拟法
+1. 画出每次函数调用的参数
+2. 标记每次的决定（选哪个节点）
+3. 追踪返回值的传递
+
+## 5. 常见递归类型
+
+### 1. 链表递归
+```c
+// 反转链表
+struct ListNode* reverseList(struct ListNode* head) {
+    if (head == NULL || head->next == NULL) return head;
+    
+    struct ListNode* newHead = reverseList(head->next);
+    head->next->next = head;
+    head->next = NULL;
+    return newHead;
+}
+```
+
+### 2. 树的递归
+```c
+// 计算树的深度
+int maxDepth(struct TreeNode* root) {
+    if (root == NULL) return 0;
+    
+    int leftDepth = maxDepth(root->left);
+    int rightDepth = maxDepth(root->right);
+    return 1 + (leftDepth > rightDepth ? leftDepth : rightDepth);
+}
+```
+
+### 3. 数组递归
+```c
+// 二分查找
+int binarySearch(int arr[], int left, int right, int target) {
+    if (left > right) return -1;
+    
+    int mid = left + (right - left) / 2;
+    if (arr[mid] == target) return mid;
+    
+    if (arr[mid] > target) {
+        return binarySearch(arr, left, mid - 1, target);
+    } else {
+        return binarySearch(arr, mid + 1, right, target);
+    }
+}
+```
+
+## 6. 什么时候使用递归？
+
+### ✅ 适合递归的场景
+- **自相似结构**：链表、树、图
+- **问题可以分解**：大问题能分成同类型小问题
+- **有明确的终止条件**：不会无限递归
+- **状态简单**：不需要记录复杂的中间状态
+
+### ❌ 不适合递归的场景
+- **简单循环能解决**：如数组遍历
+- **需要大量中间状态**：如动态规划的某些问题
+- **性能要求高**：递归有函数调用开销
+- **可能栈溢出**：递归层数过深
+
+## 7. 递归 vs 迭代对比
+
+### 链表合并：递归版
+```c
+struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
+    if (list1 == NULL) return list2;
+    if (list2 == NULL) return list1;
+    
+    if (list1->val <= list2->val) {
+        list1->next = mergeTwoLists(list1->next, list2);
+        return list1;
+    } else {
+        list2->next = mergeTwoLists(list1, list2->next);
+        return list2;
+    }
+}
+
+// 优点：代码简洁，逻辑清晰
+// 缺点：空间复杂度O(m+n)，可能栈溢出
+```
+
+### 链表合并：迭代版
+```c
+struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
+    struct ListNode dummy;
+    dummy.next = NULL;
+    struct ListNode* current = &dummy;
+    
+    while (list1 != NULL && list2 != NULL) {
+        if (list1->val <= list2->val) {
+            current->next = list1;
+            list1 = list1->next;
+        } else {
+            current->next = list2;
+            list2 = list2->next;
+        }
+        current = current->next;
+    }
+    
+    current->next = (list1 != NULL) ? list1 : list2;
+    return dummy.next;
+}
+
+// 优点：空间复杂度O(1)，性能更好
+// 缺点：代码稍长，需要维护更多变量
+```
+
+## 8. 递归学习建议
+
+### 入门练习题
+1. **阶乘计算**：n! = n * (n-1)!
+2. **斐波那契数列**：fib(n) = fib(n-1) + fib(n-2)
+3. **链表长度**：length(head) = 1 + length(head->next)
+
+### 进阶练习
+1. **二叉树遍历**：前中后序
+2. **链表反转**：递归实现
+3. **快速排序**：分治思想
+
+### 掌握标志
+- 能快速识别递归终止条件
+- 能清晰定义递归子问题
+- 不再纠结递归过程的每一步
+- 相信递归函数的功能定义
+
+## 关键心得
+
+> **不要试图跟踪递归的每一步执行过程**
+> 
+> **相信你定义的函数功能，专注于当前层要做什么**
+> 
+> **递归的艺术在于"相信"而非"控制"**
+
+
+*/
+
+
