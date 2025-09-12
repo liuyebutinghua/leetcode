@@ -1,0 +1,83 @@
+/*
+Leetcode 官方也发布了很多的思路
+比如：遍历 计算链表长度
+      利用栈的先进后出的特点
+      快慢指针
+
+
+我的思路就是：
+先翻转链表
+删除第n个节点
+再翻转链表
+
+缺点：不够简洁
+*/
+struct ListNode* List_Reversal(struct ListNode* head)
+{
+    struct ListNode Virtual_Head;
+    Virtual_Head.next = NULL;
+    struct ListNode* p = head;
+    struct ListNode* q;
+    while (p != NULL)
+    {
+        q = p->next;
+        p->next = Virtual_Head.next;
+        Virtual_Head.next = p;
+        p = q;
+    }
+    return Virtual_Head.next;
+}
+
+struct ListNode* removeNthFromEnd(struct ListNode* head, int n) {
+    //思路 1.先把序列翻转
+    //     2.删除掉第n个节点
+    //     3.再次把序列翻转
+    //     4.返回头节点的地址    
+
+    if (head == NULL)
+    {
+        return head;
+    }
+    if (head->next == NULL && n == 1)
+    {
+        return NULL;
+    }
+    if (n == 0)
+    {
+        return head;
+    }
+
+    head = List_Reversal(head);//序列翻转
+    struct ListNode* temp = head;//用于遍历
+    int position = 0;
+
+    if (n >= 2)
+    {
+        while (temp != NULL)
+        {
+            position++;
+            if (position + 1 == n)//到达要删除的节点
+            {
+                temp->next = temp->next->next;
+            }
+            temp = temp->next;
+        }
+
+    }
+    else   //n=1
+    {
+        head = head->next;
+    }
+
+
+    head = List_Reversal(head);//序列再次翻转
+    return head;
+
+}
+
+
+
+
+
+
+
