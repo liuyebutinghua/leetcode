@@ -1,0 +1,163 @@
+/*
+综合考虑，后期打算改用C++进行答题
+
+
+🧠 刻意练习方法：由图转码
+想要练出“变量直觉”，不要直接写代码，试试这个步骤：
+
+画图：在纸上画出链表或数组。
+
+用手指模拟：用手指指着当前的节点。
+
+大声说出动作：
+
+“我现在指着 1。” -> 好的，这需要一个指针 curr。
+
+“我要把 1 的箭头指向 2。” -> 2 在哪？哦，2 是 curr->next。
+
+“现在我要断开 1 和 2 的连接。” -> 等等！断开后 2 就丢了！
+
+觉醒时刻：“所以我必须先找个变量 temp 把 2 抓住！”
+
+*/
+
+// 链表节点的定义（这是 LeetCode 提供的标准结构）
+struct ListNode {
+	int val;
+	ListNode* next;
+	ListNode() : val(0), next(nullptr) {}
+	ListNode(int x) : val(x), next(nullptr) {}
+	ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+public:
+	ListNode* reverse(ListNode* head)
+	{
+		ListNode* pre=nullptr;
+		ListNode* curr= head;
+		while (curr != nullptr)//如果头地址就是nullptr，直接返回
+		{
+			ListNode* next11= curr->next;
+			curr->next = pre;
+			pre = curr;
+			curr = next11;
+		}
+		return pre;
+	}
+
+	ListNode* reverseKGroup(ListNode* head, int k) {
+		//1.创建虚节点  
+		ListNode dummy(0, head);
+		ListNode* pre = &dummy;
+		ListNode* end = &dummy;
+
+		while (end->next != nullptr)
+		{
+			// --- 步骤 1：分组（试探有没有 k 个节点）---
+			for (int i = 0; i < k&& end!=nullptr; i++)
+			{
+				end = end->next;
+			}
+			if (end == nullptr)
+			{
+				break;
+			}
+			ListNode* start = pre->next;
+			ListNode* nextgrouphead = end->next;
+			end->next = nullptr;//断开
+
+			pre->next = reverse(start);
+
+			start->next = nextgrouphead;
+
+			pre = start;
+			end = start;
+
+
+		}
+		return dummy.next;
+
+	}
+};
+
+
+
+
+/*这次答题参考Gemini提供的思路*/
+#include <iostream>
+
+// 链表节点的定义（这是 LeetCode 提供的标准结构）
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};
+
+class Solution {
+public:
+    // 辅函数：翻转一个链表
+    // 输入：1 -> 2 -> 3
+    // 输出：3 -> 2 -> 1，并返回新的头节点 3
+    ListNode* reverse(ListNode* head) {
+        ListNode* pre = nullptr;
+        ListNode* curr = head;
+        while (curr != nullptr) {
+            ListNode* next = curr->next; // 暂存下一步
+            curr->next = pre;            // 箭头反指
+            pre = curr;                  // pre 前进
+            curr = next;                 // curr 前进
+        }
+        return pre;
+    }
+
+    // 主函数
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        // 1. 创建虚拟头节点，指向 head
+        ListNode* dummy = new ListNode(0);
+        dummy->next = head;
+
+        // pre 指针：总是指向“当前要处理的这组”的前一个节点
+        // 刚开始，它指向 dummy
+        ListNode* pre = dummy;
+        ListNode* end = dummy; // end 指针：用来探测这组有没有 k 个节点
+
+        while (end->next != nullptr) {
+            // --- 步骤 1：分组（试探有没有 k 个节点）---
+            for (int i = 0; i < k && end != nullptr; i++) {
+                end = end->next;
+            }
+            // 如果不足 k 个（end 跑到了空），说明剩下的不用翻转了，直接结束
+            if (end == nullptr) break;
+
+            // --- 步骤 2：断开 ---
+            // 记录下一种的开始（比如 3）
+            ListNode* start = pre->next; // 本组的开始（比如 1）
+            ListNode* nextGroup = end->next; // 下一组的开始（比如 3）
+
+            end->next = nullptr; // 【切断】 1->2 与 3 的联系，变成独立的 1->2
+
+            // --- 步骤 3：翻转 ---
+            pre->next = reverse(start); // 翻转 1->2 变成 2->1，并把 dummy 接到 2 上
+
+            // --- 步骤 4：拼接 ---
+            // 翻转后，start（也就是 1）变成了这组的尾巴
+            // 我们要把 1 重新连上 nextGroup（也就是 3）
+            start->next = nextGroup;
+
+            // --- 步骤 5：推进 ---
+            // 现在的结构是 dummy -> 2 -> 1 -> 3 -> 4...
+            // 下一组的前一个节点应该是 1（也就是 start）
+            pre = start;
+            end = pre; // 重置 end 指针，准备下一次探测
+        }
+
+        return dummy->next;
+    }
+};
+
+
+
+
