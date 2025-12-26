@@ -1,0 +1,108 @@
+/*
+
+
+这道题是 LeetCode 148. 排序链表 (Sort List)。
+这是一道非常综合的题目，它基本上就是把我们之前学的几招全部串起来了
+！快慢指针（找中点）。递归（分治法）。链表合并（双指针）。
+对于链表排序，最标准、效率最高（$O(n \log n)$）的算法是归并排序 (Merge Sort)。
+1. 核心思路：分治法 (Divide and Conquer)想象你有一堆乱序的扑克牌（链表），你想把它们理顺。
+归并排序的策略是：“切碎，再组装”。切 (Cut)：把长链表从中间一刀切断，变成两个短链表。
+分 (Recurse)：对这两个短链表继续切，直到切成只剩 1 个节点（或者 0 个）。
+问：1 个节点需要排序吗？答：不需要，它天然就是有序的。（这就是我们的停止条件！）
+合 (Merge)：把两个有序的短链表，合并成一个有序的长链表。2. 解题三部曲我们要写三个模块：找中点（切断）
+：用快慢指针，找到链表的一半，把链表断开。合并（组装）：给你两个有序链表，把它们拼成一个有序链表
+（这其实是另一道 LeetCode 简单题：合并两个有序链表）。主函数：控制整个递归流程。
+
+
+
+细节一：为什么快指针初始化要 fast = head->next？
+这涉及到我们之前聊的**“停止条件”和“死循环”**。
+
+假设链表只有两个节点：[1, 2]。
+
+如果是 fast = head：
+
+快慢指针走完一轮，slow 会走到 2。
+
+你切不开（mid 变成了空），左边还是 [1, 2]。
+
+递归 sortList([1, 2]) -> 又是 [1, 2] -> 死循环（Stack Overflow）。
+
+如果是 fast = head->next：
+
+一开始 fast 在 2，slow 在 1。
+
+循环进不去（因为 fast->next 是空）。
+
+mid = slow->next (即 2)。
+
+slow->next = nullptr。
+
+成功切分为 [1] 和 [2]。
+
+变量哲学：这里的 slow 实际上充当了“剪刀手”的角色，它必须停在第一段的末尾，而不是第二段的开头。
+
+细节二：Dummy Node 的再次登场
+在 merge 函数里，我们需要构建一个新的链表。 还记得吗？只要头节点可能变（或者头节点还没生出来），就用 Dummy Node。 它让我们避免了写 if (head == nullptr) head = l1; else ... 这种啰嗦的代码。
+*/
+
+
+class Solution {
+public:
+    ListNode* merge(ListNode* L1, ListNode* L2)
+    {
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        while (L1 != nullptr && L2 != nullptr)
+        {
+            if (L1->val < L2->val)
+            {
+                curr->next = L1;
+                L1 = L1->next;
+            }
+            else
+            {
+                curr->next = L2;
+                L2 = L2->next;
+            }
+            curr = curr->next;
+        }
+        if(L1 != nullptr) curr->next = L1;
+        if (L2 != nullptr) curr->next = L2;
+
+        return dummy.next;
+    }
+
+
+
+    ListNode* sortList(ListNode* head) {
+        //1.判断head是否为空或者只有一个值
+        if (head == nullptr || head->next == nullptr)
+        {
+            return head;
+        }
+
+        //2.快慢指针找到中点
+        ListNode* slow = head;
+        ListNode* fast = head->next;
+
+        while (fast->next != nullptr&&fast != nullptr)
+        {
+            slow = slow->next;
+            fast = fast->next->next;  
+        }
+
+        //3.中点分割
+        ListNode* midnode = slow->next; //后一段的头
+        slow->next = nullptr;//切断链表
+
+        //4.递归    目的是把链表分成都是1个点的指针
+        ListNode* left = sortList(head);
+        ListNode* right = sortList(midnode);
+
+        //5.拼接并返回拼接完的指针
+
+        return merge(left, right);
+    }
+};
