@@ -1,0 +1,81 @@
+/*
+1. 为什么这道题难？(痛点分析)
+如果只是普通链表（只有 next），我们从头到尾走一遍，一边走一边创建新节点连起来就行了。
+
+但这道题有个 random 指针。 假设 A 指向 B (A->next = B)，同时 A 的 random 指向 Z (A->random = Z)。 当你复制 A 的时候（生成 A'），你可能还没遇到 Z 呢！Z 可能在链表的最后面。 这时候你不知道把 A'->random 指向哪里，因为 Z 的克隆体 Z' 还没出生。
+
+2. 核心思路：你需要一本“花名册”
+还记得我们之前聊的“变量就是记忆”吗？ 这里我们需要记忆的东西太多了：我们需要记住 “原节点 A 对应的新节点 A' 是谁”。
+
+我们需要引入 C++ 的神器：std::unordered_map (哈希表)。 把它想象成一本字典（或者花名册）：
+
+Key (左边)：原链表的节点地址 (老王)
+
+Value (右边)：新链表的节点地址 (老王的克隆人)
+
+3. 解题步骤 (两轮遍历法)
+我们把任务拆成两步，这样逻辑最清晰：
+
+第一轮循环：只负责造人 (复制节点) 不管连线关系，先把所有的节点复刻一份，存到字典里。
+
+看到老节点 A，创建新节点 A'。
+
+在字典里写下：map[A] = A'。
+
+看到老节点 B，创建新节点 B'。
+
+在字典里写下：map[B] = B'。
+
+第二轮循环：只负责连线 (处理指针) 再次遍历链表，利用字典把线连起来。
+
+现在我们要处理 A' 的指针。
+
+A'->next 应该是谁？查字典：map[A->next]。
+
+A'->random 应该是谁？查字典：map[A->random]。
+
+因为第一轮我们已经把所有人都造出来了，所以这次查字典一定能查到！
+
+*/
+class Solution {
+public:
+    Node* copyRandomList(Node* head) {
+        if (head == nullptr)
+        {
+            return head;
+        }
+        //建立一个希哈表，用于记录老表与新表的对应关系   <老，新>
+        unordered_map<Node*, Node*> map;
+
+        //往map中添加数据   
+        Node* curr = head;
+        while (curr != nullptr)
+        {
+            Node* newnode = new Node(curr->val);
+            map[curr] = newnode;
+            curr = curr->next;
+        }
+
+        //把老链表和新链表一一对应后   再次遍历 map  给把老链表的信息赋值给新链表
+        curr = head;
+        while (curr != nullptr)
+        {
+            Node* newnode = map[curr];//获取对应的新链表的指针
+
+            if (curr->next != nullptr)
+            {
+                newnode->next = map[curr->next];
+            }
+           
+            if (curr->random != nullptr)
+            {
+                newnode->random = map[curr->random];
+            }
+            curr = curr->next;
+        }
+
+        return map[head];
+
+    }
+};
+
