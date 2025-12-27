@@ -1,0 +1,157 @@
+/*
+1.前面的代码是自己想到思路，合并
+*/
+
+
+//1.自己写的代码
+class Solution {
+public:
+    ListNode* marge(ListNode* L1,  ListNode* L2)
+    {
+        if (L1 == nullptr && L2 == nullptr) return nullptr;
+        else if (L1 != nullptr && L2 == nullptr) return L1;
+        else if (L1 == nullptr && L2 != nullptr) return L2;
+
+        ListNode dummy(10);//虚假头
+        ListNode* curr = &dummy;
+        while (L1 != nullptr && L2 != nullptr)
+        {
+            if (L1->val < L2->val)
+            {
+                curr->next = L1;
+                L1 = L1->next;
+            }
+            else
+            {
+                curr->next = L2;
+                L2 = L2->next;
+            }
+
+            curr = curr->next;
+        }
+        if (L1 != nullptr) curr->next = L1;
+        if (L2 != nullptr) curr->next = L2;
+    
+        return dummy.next;
+    }
+
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        // 【修正 1】先判断 vector 是否为空
+        if (lists.empty()) {
+            return nullptr;
+        }
+
+        // 【修正 2】从第一个链表开始
+        // 这一步是安全的，因为上面已经排除了 empty 的情况
+        ListNode* curr = lists[0];
+
+        // 【修正 3】从 i=1 开始往后逐个合并
+        if (lists.size() >= 2)
+        {
+            for (int i = 1; i < lists.size(); i++) {
+                curr = marge(curr, lists[i]);
+            }
+        }
+        return curr;
+    }
+};
+
+
+//2.AI给的解决的代码
+/*
+进阶解法 —— 优先队列 (Priority Queue)
+要解决这道 Hard 题，通常使用的是**“最小堆” (Min Heap)** 思路。
+
+直觉： 如果你有 3 个排好序的队列，你想找出最小的那个头。 你不需要把它们全部两两合并。你只需要看这 3 个队列队头的那 3 个数字，谁最小，就把谁拿出来，放到结果里。然后那个被拿走的队列，替补上来下一个数字。
+
+这需要一个能快速帮我们“从 K 个数里找出最小值”的数据结构，那就是 C++ STL 的 priority_queue。
+
+priority_queue<Type, Container, Comparator> pq;
+1. 它是做什么的？
+priority_queue（优先队列）是一个会自动排序的队列。
+
+普通队列 (queue)：先入先出 (FIFO)。
+
+优先队列 (priority_queue)：不管你什么时候塞进去，优先级最高的元素永远排在最前面（堆顶），你可以随时取出来。
+
+2. 尖括号里的三个参数详解
+这行代码： priority_queue<ListNode*, vector<ListNode*>, CompareNode> pq; 含义如下：
+
+第 1 参数 ListNode*：
+
+存什么？ 告诉队列，我要存的是“链表节点的指针”。
+
+第 2 参数 vector<ListNode*>：
+
+用什么存？ 告诉队列，底层请用 vector 数组来帮我保管这些数据。（这是 C++ 的语法要求，通常默认就是 vector，但当我们需要自定义第 3 个参数时，第 2 个参数必须显式写出来）。
+
+第 3 参数 CompareNode (最关键！)：
+
+怎么排？ 告诉队列，谁的优先级高？
+
+默认情况下，C++ 的优先队列是大顶堆（数字大的在上面）。
+
+但我们在合并链表时，需要每次拿出最小的节点。所以我们需要写一个“仿函数”结构体 CompareNode 来告诉它：“值越小，优先级越高”。
+
+总结
+这句话翻译成大白话就是：
+
+“嘿 C++，给我建一个优先队列，名字叫 pq。 里面存的是链表节点，底层用 vector 装。 至于排序规则嘛，请按照我写的 CompareNode 来排（让值小的节点排在最前面）！”
+
+这样，当你执行 pq.pop() 时，它就会自动把当前 K 个节点里数值最小的那个弹出来给你。
+
+4. 记忆口诀
+为了防止下次搞混，你可以这样记：
+
+在优先队列 (priority_queue) 里： 想把“小”的捧在手心（堆顶），就要“大于”别人。 (Small on top, use Greater)
+*/
+
+class Solution {
+public:
+    // 1. 写一个仿函数（或者用 lambda），告诉优先队列怎么比大小
+    // 我们希望是“小顶堆”，即值越小越在上面。
+    // 默认 priority_queue 是大顶堆，所以这里规则要反着写（大于号）。
+    struct CompareNode {
+        bool operator()(ListNode* a, ListNode* b) {
+            return a->val > b->val; // 值小的优先级高
+        }
+    };
+
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        // 定义一个小顶堆
+        priority_queue<ListNode*, vector<ListNode*>, CompareNode> pq;
+
+        // 1. 把所有链表的【头节点】都扔进堆里
+        for (auto list : lists) {
+            if (list != nullptr) {
+                pq.push(list);
+            }
+        }
+
+        // 2. 建立虚拟头节点，准备串项链
+        ListNode dummy(0);
+        ListNode* tail = &dummy;
+
+        // 3. 只要堆不为空，就不断弹出最小的
+        while (!pq.empty()) {
+            // 取出最小的那个节点
+            ListNode* smallest = pq.top();
+            pq.pop();
+
+            // 把它串到结果链表后面
+            tail->next = smallest;
+            tail = tail->next;
+
+            // 【关键】如果这个节点后面还有节点，把它后面的那个节点再扔进堆里
+            if (smallest->next != nullptr) {
+                pq.push(smallest->next);
+            }
+        }
+
+        return dummy.next;
+    }
+};
+
+
+
+
