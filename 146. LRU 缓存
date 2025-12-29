@@ -1,0 +1,130 @@
+/*
+这道题（LeetCode 146）是算法面试界的“榜首”，几乎是考察频率最高的题目之一！
+因为它完美考察了你对哈希表和链表的综合运用能力。别被题目吓倒，我们先用一个
+生活中的例子来秒懂什么是 LRU。1. 什么是 LRU？（手机后台原理）想象你手机的
+**“最近任务列表”**（也就是你滑一下能看到刚才开了哪些 App 的那个界面）。
+假设你的手机内存很小，后台只能同时挂 3 个 App（Capacity = 3）。
+规则如下：新来的排前面：你刚打开一个新 App（比如微信），它会出现在列表的最左边（最热）
+。旧的被挤走：如果你接连打开了 抖音、淘宝、知乎，那么最早打开的微信就被挤到最右边去了。
+用过的会“复活”：如果你突然又点开了微信，它会瞬间跳回到最左边（因为它刚被使用过，变成了“最近使用”）
+。满了就踢人：现在后台有 [知乎, 淘宝, 抖音]。如果你再打开一个 B站，内存不够了，谁会被杀掉？
+答案是：最右边那个最久没动过的 App（抖音）。现在的状态：[B站, 知乎, 淘宝]。
+
+这就是 LRU (Least Recently Used)：最近最少使用的人，先被淘汰。
+2. 为什么难？（O(1) 的挑战）题目要求 get (查找) 和 put (插入/更新) 都要在 $O(1)$ 时间内完成。
+如果只用数组：查找慢，移动元素慢。如果只用链表：插入快，删除快，但查找慢（必须从头遍历，$O(n)$）。
+如果只用哈希表：查找快，但没有顺序（不知道谁是最早进来的）。
+💡 破局之道：哈希表 + 双向链表 (Hash Map + Double Linked List)
+我们要结合两者的优点：哈希表 (unordered_map)：负责查找。给我一个 Key，
+我立马告诉你这个节点在链表的哪里。双向链表：负责排队。表头 (Head)：存放最新的数据（Hot）。
+表尾 (Tail)：存放最老的数据（Cold）。为什么是双向？ 因为当我们想把中间的一个节点删掉移到头部时
+，双向链表可以直接找到它的前驱节点，实现 $O(1)$ 删除。3. C++ 核心逻辑设计为了写代码方便，我们通常
+会加两个虚拟节点：Dummy Head (伪头)：永远指向最新的。Dummy Tail (伪尾)：永远指向最老的。这样我
+们就不用处理“链表为空”这种烦人的边界情况了。操作流程：GET (获取数据)：查 Map：有吗？没有返回 -1。
+有的话，拿到这个节点。把它从当前位置摘下来，插到 Head 的后面（因为它刚被临幸了，地位变高）。返回数值。
+PUT (存数据)：查 Map：在这个 Key 已经有了吗？如果有：更新 Value，并把它移动到 Head 后面。如果没有：
+创建一个新节点。放到 Head 后面。记录到 Map。检查容量：如果超标了，砍掉 Tail 前面的那个节点（最老的）
+，并在 Map 里也删掉它。
+
+
+*/
+
+struct DListNode {
+    int key;
+    int value;
+
+    DListNode* pre;
+    DListNode* next;
+
+    DListNode() :key(0), value(0), pre(nullptr), next(nullptr){};
+    DListNode( int _key,int _value): key(_key), value(_value), pre(nullptr), next(nullptr){};
+
+};
+
+class LRUCache {
+public:
+    int capacity;
+    int size;//记录存入的数量，用于判断是否需要删除最久没有调用
+
+    unordered_map<int, DListNode*> cache;//用于快速查找是否存在
+
+    DListNode* head;//链表头
+    DListNode* tail;//链表尾
+
+    /*
+    从功能分析，发现需要三个基本动作
+    1.添加新数据
+    2.删除最老的数据
+    3.移动到第一
+    */
+
+    //1.添加新数据
+    void addnewnode(DListNode* node)
+    {
+        //添加 并且添加在head后面
+        node->pre = head;
+        node->next = head->next;
+        head->next->pre = node;
+        head->next = node;
+    }
+
+    DListNode* deletenode(void)
+    {
+        DListNode* temp = tail->pre;
+        tail->pre->pre->next = tail;
+        tail->pre = tail->pre->pre;
+        return temp;
+    }
+
+
+    void movenode(DListNode* node)
+    {
+        node->pre->next = node->next;
+        node->next->pre = node->pre;
+        addnewnode(node);
+    }
+
+
+    LRUCache(int capacity) {  //变量初始化
+        this->capacity = capacity;
+        this->size = 0;
+        this->head = new DListNode();
+        this->tail = new DListNode();
+        head->next = tail;
+        tail->pre = head;
+    }
+
+    int get(int key) {
+        if (cache.count(key))//key存在
+        {
+            DListNode* temp = cache[key];
+            movenode(temp);//移动到头节点后
+            return temp->value;
+        }
+        return -1;
+    }
+
+    void put(int key, int value) {
+        if (cache.count(key))//key存在
+        {
+            DListNode* temp = cache[key];
+            movenode(temp);//移动到头节点后
+            temp->value = value;
+        }
+        else//没找到
+        {
+            DListNode* temp = new DListNode(key, value);
+            addnewnode(temp);
+            cache[key] = temp;
+            size++;
+            if (size > capacity)
+            {
+                DListNode * removed=deletenode();
+                cache.erase(removed->key);
+                delete removed;
+                --size;
+            }
+        }
+    }
+};
+
