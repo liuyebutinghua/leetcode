@@ -1,0 +1,30 @@
+/*
+正确思路：甩锅法（后序遍历）
+求二叉树深度，最标准的做法是递归（后序遍历）。
+
+别自己去数数。作为根节点 root，你只需要做三件事：
+
+问左孩子：“你最深能到多少？” -> 得到 leftDepth
+
+问右孩子：“你最深能到多少？” -> 得到 rightDepth
+
+算自己：我的深度 = max(leftDepth, rightDepth) + 1。（加 1 是加上我自己这一层）。
+
+这就能保证遍历到所有的节点，而不是只走边缘。
+*/
+class Solution {
+public:
+
+	int maxDepth(TreeNode* root) {
+		if (root == nullptr)
+		{
+			return 0;
+		}
+		int left_deep = maxDepth(root->left);
+		int right_deep = maxDepth(root->right);
+
+		return max(left_deep, right_deep) + 1;
+
+	}
+};
+
