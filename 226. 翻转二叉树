@@ -1,0 +1,22 @@
+/*
+主要还是递归的思想
+
+不理解的时候，可以找个纸画个流程示意图
+*/
+
+class Solution {
+public:
+	TreeNode* invertTree(TreeNode* root) {
+		if (root == nullptr)
+		{
+			return nullptr;
+		}
+		TreeNode* left = invertTree(root->left);
+		TreeNode* right = invertTree(root->right);
+
+		root->left = right;
+		root->right = left;
+
+		return root;
+	}
+};
