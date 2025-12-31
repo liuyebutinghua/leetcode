@@ -1,0 +1,72 @@
+
+//容易犯的错误：只判断了形状，没有判断值是否对称
+class Solution {
+public:
+
+	bool my_duicheng(TreeNode* left, TreeNode* right)
+	{
+		if (left == nullptr && right == nullptr)
+		{
+			return true;
+		}
+		if (left == nullptr || right == nullptr)
+		{
+			return false;
+		}
+
+		if (left->val == right->val)
+		{
+			if (my_duicheng(left->left, right->right) && my_duicheng(left->right, right->left))
+			{
+				return true;
+			}
+			return false;
+
+		}
+		return false;
+	}
+
+
+	bool isSymmetric(TreeNode* root) {
+		if (root == nullptr)
+		{
+			return true;
+		}
+		return my_duicheng(root->left, root->right);
+	}
+};
+
+
+//ai改进的代码    对于my_duicheng写法更加简洁
+class Solution {
+public:
+    bool my_duicheng(TreeNode* left, TreeNode* right) {
+        // 1. 两个都为空，是对称的 -> true
+        if (left == nullptr && right == nullptr) {
+            return true;
+        }
+        // 2. 一个空一个不空，不对称 -> false
+        if (left == nullptr || right == nullptr) {
+            return false;
+        }
+        
+        // ---【这里是你漏掉的关键代码】---
+        // 3. 两个都不为空，但是值不一样 -> false
+        if (left->val != right->val) {
+            return false;
+        }
+        // -----------------------------
+
+        // 4. 只有值相等，才继续递归：
+        // 比较：外侧 (左的左 vs 右的右) && 内侧 (左的右 vs 右的左)
+        return my_duicheng(left->left, right->right) && 
+               my_duicheng(left->right, right->left);
+    }
+
+    bool isSymmetric(TreeNode* root) {
+        if (root == nullptr) {
+            return true;
+        }
+        return my_duicheng(root->left, root->right);
+    }
+};
