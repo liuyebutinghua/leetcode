@@ -1,0 +1,56 @@
+/*
+我们要遍历每一个节点，对于每一个节点，我们都算一下：
+
+“如果把你当做拐点，你的路径有多长？”
+
+这看起来很麻烦，要写两层递归？其实不用。
+
+我们在写 maxDepth（求深度）这个函数时，是不是已经求出了 Left（左深）和 Right（右深）？ 我们只需要在求深度的同时也顺便计算一下直径。
+
+变量定义：
+
+全局变量 ans：用来记录目前为止发现的最长路径。
+
+递归函数 depth(root)：
+
+职责 1（向上汇报）：告诉父节点，“我这棵子树最深有多少层？”（为了父节点能继续算它自己的深度）。
+
+返回：max(Left, Right) + 1
+
+职责 2（暗中观察）：计算以当前节点为拐点的路径长度，并挑战全局冠军 ans。
+
+计算：Current_Diameter = Left + Right
+
+更新：ans = max(ans, Current_Diameter)
+
+*/
+
+
+class Solution {
+public:
+
+	int my_deepth(TreeNode* root)
+	{
+		if (root == nullptr)
+		{
+			return 0;
+		}
+		int leftdeepth = my_deepth(root->left);
+		int righdeepth = my_deepth(root->right);
+
+		maxdeepth = (maxdeepth > (leftdeepth + righdeepth)) ? maxdeepth : (leftdeepth + righdeepth);
+
+		return max(leftdeepth, righdeepth) + 1;
+	}
+
+
+
+	int diameterOfBinaryTree(TreeNode* root) {
+		maxdeepth = 0;
+		my_deepth(root);
+		return maxdeepth;
+	}
+
+	int maxdeepth;
+
+};
