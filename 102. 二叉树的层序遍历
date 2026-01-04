@@ -1,0 +1,57 @@
+/*
+层序遍历 (Level Order Traversal) 的天选之子是 BFS (广度优先搜索)，通常使用 队列 (Queue) 来实现。
+
+这也是面试官最希望看到的解法，因为它符合人的直觉：排队。
+
+思路：
+
+准备一个队列，先把 Root 放进去。
+
+只要队列不空：
+
+记录当前队列的长度 n（这一刻队列里全是同一层的节点）。
+
+只处理这 n 个节点：
+
+弹出一个，记下值。
+
+如果有左孩子，左孩子入队。
+
+如果有右孩子，右孩子入队。
+
+这 n 个处理完，刚好这一层的孩子（下一层）也都排好队了。
+
+
+*/
+
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+		vector<vector<int>> result;
+		if (root == nullptr)
+			return result;
+		queue<TreeNode*> p;
+		p.push(root);
+
+		while (!p.empty())
+		{
+			int current_point_num = p.size();
+			vector<int> current_level;
+
+			for(int i = 0; i < current_point_num; i++)
+			{
+				TreeNode* temp = p.front();
+				p.pop();
+				current_level.push_back(temp->val);
+
+				if (temp->left) p.push(temp->left);
+				if (temp->right)p.push(temp->right);
+
+			}
+			result.push_back(current_level);
+
+		}
+		return result;
+
+    }
+};
