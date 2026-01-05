@@ -1,0 +1,29 @@
+/*
+我们不需要真的把数组切成两半（那是 Python 的写法，C++ 这样写太慢）。
+我们只需要告诉递归函数：“请处理数组 nums 中，从下标 left 到下标 right 这一段区域。”
+原始数组：nums （一直传引用，不拷贝）左边界：left右边界：
+right这样空间复杂度就能降到 $O(\log N)$（只算递归栈的空间）
+
+
+*/
+class Solution {
+public:
+
+    TreeNode* my_help(vector<int>& nums, int left, int right)
+    {
+        if (left > right)
+            return nullptr;
+        int mid = left + (right - left) / 2;
+        TreeNode* temp = new TreeNode(nums[mid]);
+        temp->left = my_help(nums, left, mid - 1);
+        temp->right = my_help(nums, mid + 1, right);
+        return temp;
+
+
+    }
+
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        return my_help(nums, 0, nums.size() - 1);//传的都是索引
+    }
+
+};
