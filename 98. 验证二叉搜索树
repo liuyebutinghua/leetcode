@@ -1,0 +1,62 @@
+/*
+在代码随想录中学习到了两种解法
+1、根据验证二叉搜索树的特点，进行中序遍历读取到一个数组中，得到的数组是一个有序的数组
+class Solution {
+public:
+
+	void my_help(TreeNode* root)
+	{
+		if (root == nullptr)return;
+		my_help(root->left);
+		vec.push_back(root->val);
+		my_help(root->right);
+	}
+
+	bool isValidBST(TreeNode* root) {
+		my_help(root);
+		for (int i = 0; i < vec.size() - 1; ++i)
+		{
+			if (vec[i] > vec[i + 1])
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	vector<int> vec;
+};
+
+
+2、在进行中序遍历的同时完成对数据比较判断，时刻保留遍历过的最大值与未遍历的值进行比较
+class Solution {
+public:
+	bool isValidBST(TreeNode* root) {
+		if (root == nullptr) return true;
+		bool left_log= isValidBST(root->left);
+		if (max_log < root->val)max_log = root->val;
+		else return false;
+		bool right_log = isValidBST(root->right);
+
+		return left_log && right_log;
+
+	}
+	long long max_log = LONG_MIN;
+	
+};
+
+
+补充知识点：
+记住一个最核心的口诀，以后你永远不会搞混：
+
+所谓的“前、中、后”，指的都是“根节点（Root）”什么时候出场。
+
+前序：根节点先出场。
+
+中序：根节点在中间出场。
+
+后序：根节点最后出场。
+
+(注：左孩子永远在右孩子前面)
+
+*/
