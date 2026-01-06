@@ -1,0 +1,48 @@
+/*
+这个题目我直接的思路是：把数据放在一个数组中，用中序读取到数组中，再以K做索引进行读取
+但是这个思路浪费了资源且浪费了时间
+class Solution {
+public:
+
+	void my_help(TreeNode* root)//遍历二叉树，把值存在一个有序的数组
+	{
+		if (root == nullptr) return;
+		sort_arry.push_back(root->val);
+		my_help(root->left);
+		my_help(root->right);
+	}
+
+	int kthSmallest(TreeNode* root, int k) {
+		my_help(root);
+		sort(sort_arry.begin(), sort_arry.end());
+		return sort_arry[k-1];
+	}
+
+	vector<int> sort_arry;
+};
+
+
+
+
+实际上二叉搜索树的中序读取本来就是有顺序的，直接可以用
+class Solution {
+public:
+	void  my_help(TreeNode* root, int& k)
+	{
+		if (root == nullptr) return;
+		my_help(root->left, k);
+		--k;
+		if (k == 0) result = root->val;
+		my_help(root->right, k);
+	}
+	int kthSmallest(TreeNode* root, int k) {
+		my_help(root, k);
+		return result;
+	}
+	int result;
+
+};
+
+
+
+*/
