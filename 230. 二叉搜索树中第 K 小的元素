@@ -1,0 +1,79 @@
+/*
+这个题目我直接的思路是：把数据放在一个数组中，用中序读取到数组中，再以K做索引进行读取
+但是这个思路浪费了资源且浪费了时间
+class Solution {
+public:
+
+	void my_help(TreeNode* root)//遍历二叉树，把值存在一个有序的数组
+	{
+		if (root == nullptr) return;
+		sort_arry.push_back(root->val);
+		my_help(root->left);
+		my_help(root->right);
+	}
+
+	int kthSmallest(TreeNode* root, int k) {
+		my_help(root);
+		sort(sort_arry.begin(), sort_arry.end());
+		return sort_arry[k-1];
+	}
+
+	vector<int> sort_arry;
+};
+
+
+
+
+实际上二叉搜索树的中序读取本来就是有顺序的，直接可以用
+class Solution {
+public:
+	void  my_help(TreeNode* root, int& k)
+	{
+		if (root == nullptr) return;
+		my_help(root->left, k);
+		--k;
+		if (k == 0) result = root->val;
+		my_help(root->right, k);
+	}
+	int kthSmallest(TreeNode* root, int k) {
+		my_help(root, k);
+		return result;
+	}
+	int result;
+
+};
+
+进阶：进阶：如果二叉搜索树经常被修改（插入/删除操作）并且你需要频繁地查找第 k 小的值，你将如何优化算法？
+
+进阶优化方案：带子树计数的 BST要在插入、删除、查找这三个操作上都达到平衡的 $O(\log N)$，
+我们需要修改二叉树的节点结构。核心思路：在每个节点里多存一个变量 size，记录以当前节点为
+根的子树中，一共有多少个节点。节点结构变成这样：C++struct TreeNode {
+    int val;
+    int size; // 新增：这棵子树一共有多少个节点（包括自己）
+    TreeNode *left;
+    TreeNode *right;
+    // ...
+};
+算法逻辑 (如何找第 K 小)：假设当前根节点是 root，它的左子树有 left_num 个节点：
+左边够不够？如果 k <= left_num：说明第 k 小的数肯定在左子树里。-> 递归往左找：
+find(root->left, k)是不是自己？如果 k == left_num + 1：左边有 left_num 个，加上
+我自己刚好第 k 个。-> 找到啦！ 就是 root->val。在右边吗？如果 k > left_num + 1：
+左边和自己加起来都不够 k 个，说明在右子树里。-> 递归往右找：find(root->right, k - (left_num + 1))
+(注意：去右边找的时候，K 要减去左边和根节点已经占用的名额)3. 举个栗子 🌰假设树的结构如下
+（括号里是 size）：Plaintext        5(size=6)
+       /        \
+    3(size=3)   6(size=2)
+   /    \          \
+  2(1)  4(1)       8(1)
+任务：找第 4 小的数 (k=4)站在根节点 5：左子树 3 的 size 是 3。我们要找第 4 小。
+因为 4 > 3 + 1 (左边3个 + 根节点1个 = 4个不够分吗？不对，这里 k 刚好等于 left_size + 1，
+应该是找右边之前的临界点，或者是根节点)。让我们套用公式：left_num = 3。k (4) == left_num (3) + 1。
+命中！ 答案就是根节点 5。任务：找第 5 小的数 (k=5)站在根节点 5：left_num = 3。k (5) > 3 + 1。
+去右边找。新 K = 5 - (3 + 1) = 1。-> 去右子树找第 1 小。站在节点 6：它没有左孩子，left_num = 0。k (1) == 0 + 1。命中！
+答案就是 6。
+
+
+
+*/
+
+
