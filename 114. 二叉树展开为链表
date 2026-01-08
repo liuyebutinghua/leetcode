@@ -1,0 +1,85 @@
+/*
+解法一：先用容器把所有节点按顺序存下来，然后再把它们重新串成链表。注意节点的移动
+*/
+class Solution {
+public:
+	void xianxu(TreeNode* root)
+	{
+		if (root == nullptr) return;
+		my_queue.push(root);
+		zhongxu(root->left);
+		zhongxu(root->right);
+	
+	}
+
+	void flatten(TreeNode* root) {
+		if (root == nullptr) return;
+		xianxu(root);
+		int num_size = my_queue.size();
+		TreeNode* curr= my_queue.front();
+		my_queue.pop();
+		for (int i = 0; i < num_size-1; i++)
+		{
+			TreeNode* temp = my_queue.front();
+			curr->right = temp;
+			curr->left = nullptr;
+			curr = curr->right;
+			my_queue.pop();
+		}
+		
+	}
+	queue<TreeNode*> my_queue;
+};
+
+
+
+/*
+进阶要求：你可以使用原地算法（O(1) 额外空间）展开这棵树吗
+我们看先序遍历的规律： root 的下一个节点，应该是它的 left 子树的根。 那 root 原本的 right 子树去哪了呢？ 它应该接在 left 子树最右边的那个节点下面。
+
+算法步骤：
+
+如果当前节点 curr 有左子树 (curr->left != nullptr)：
+
+找到左子树里最右边的那个节点（我们叫它 pre）。
+
+把 curr 原本的右子树，接到 pre 的右边。
+
+把 curr 的左子树，整个挪到 curr 的右边。
+
+把 curr 的左边置空。
+
+curr 继续往右走下一个节点。
+*/
+class Solution {
+public:
+
+	void flatten(TreeNode* root) {
+		if (root == nullptr) return;
+		TreeNode* curr = root;
+		while (curr != nullptr)//如果curr==nullptr  表示已经全部遍历完
+		{
+			if (curr->left != nullptr)//只有有左字根的时候才需要裁剪
+			{
+				//1.找到curr的左子根最右的节点
+				TreeNode* pre = curr->left;
+				while (pre->right != nullptr)
+				{
+					pre = pre->right;
+				}
+				//2.把curr的右子根嫁接到左子根最右的节点的右边
+				pre->right = curr->right;
+
+				//3.把curr的左子根嫁接到右字根的位置
+				curr->right = curr->left;
+				curr->left = nullptr;
+			}
+			curr = curr->right;
+		}
+	}
+};
+
+
+
+
+
