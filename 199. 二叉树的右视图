@@ -1,0 +1,38 @@
+/*
+解法：BFS (层序遍历) —— 推荐解法
+这就是你上一题（102题）的微改版。
+修改点： 上一题我们把这一层的所有节点都存进结果； 这一题我们在遍历这一层时，只把最后一个节点存进结果。
+*/
+
+class Solution {
+public:
+
+	vector<int> rightSideView(TreeNode* root) {
+		vector<int> result;
+		if (root == nullptr) return result;
+		queue<TreeNode*> my_queue;
+		my_queue.push(root);
+		int num_size = 0;
+		while (!my_queue.empty())
+		{
+			num_size = my_queue.size();
+			for (int i = 0; i < num_size; ++i)
+			{
+				TreeNode* temp = my_queue.front();
+				if (i == num_size - 1)
+				{
+					result.push_back(temp->val);
+				}
+				my_queue.pop();
+				if(temp->left!=nullptr) my_queue.push(temp->left);
+				
+				if (temp->right != nullptr)my_queue.push(temp->right);
+
+			}
+		}
+
+		return result;
+	}
+
+
+};
