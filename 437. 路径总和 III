@@ -1,0 +1,88 @@
+/*
+1、简单粗暴的解法
+解法一：双重递归（直觉思路）
+思路： 既然路径可以从任意节点开始，那我就把每一个节点都当成是根节点，算一遍“从这里出发往下走，有多少路径等于 target”。
+
+我们需要写两个函数：
+
+rootSum(node, target): 死规定必须以 node 为起点，往下找路径。
+
+pathSum(root, target): 大管家，负责遍历整棵树，对每个节点都调用一次 rootSum。
+
+*/
+class Solution {
+public:
+	int rootSum(TreeNode* root, long long  targetSum)
+	{
+		if (root == nullptr) return 0;
+		int count = 0;
+		if (root->val == targetSum) count++;
+		count +=rootSum(root->left, targetSum- root->val);
+		count += rootSum(root->right, targetSum - root->val);
+		return count;
+	}
+
+
+	int pathSum(TreeNode* root, int targetSum) {
+		if (root == nullptr) return 0;
+
+		long long count = rootSum(root, (long long)targetSum);
+		count += pathSum(root->left, (long long)targetSum);
+		count += pathSum(root->right, (long long)targetSum);
+		return count;
+	}
+};
+
+/*
+2、高级的解法
+解法二：前缀和 + 回溯（满分思路）思路来源：这其实是 LeetCode 560 (和为 K 的子数组) 在树上的升级版。
+想象一条从 根节点 (Root) 垂直到 当前节点 (Curr) 的路径。我们维护一个变量 currSum，表示从 Root 到 Curr 的总和。
+核心公式：如果我们想知道，在 Curr 之前，有没有某个祖先节点 X，使得 X -> ... -> Curr 的路径和等于 Target。
+这等价于判断：$$currSum - oldSum = Target$$移项得：$$oldSum = currSum - Target$$也就是说：
+我只需要查一下哈希表，看看之前的路径中，前缀和等于 currSum - Target 的出现过几次？关键步骤（回溯）：
+因为是二叉树，左子树用过的前缀和，不能给右子树用（因为它们不在同一条路径上）。
+所以，当我们离开一个节点返回父节点时，必须把这个节点的前缀和从 Map 里删掉（或者计数减 1）。
+*/
+class Solution {
+public:
+    // key: 前缀和, value: 这个前缀和出现了几次
+    unordered_map<long long, int> prefixMap;
+    int count = 0;
+
+    void dfs(TreeNode* root, long long currSum, int target) {
+        if (!root) return;
+
+        // 1. 更新当前路径的前缀和
+        currSum += root->val;
+
+        // 2. 核心：看看是否有祖先节点的前缀和满足条件
+        // 如果 map 里有 (currSum - target)，说明中间那段路径和就是 target
+        if (prefixMap.count(currSum - target)) {
+            count += prefixMap[currSum - target];
+        }
+
+        // 3. 记录当前的前缀和，供子孙节点使用
+        prefixMap[currSum]++;
+
+        // 4. 继续往下走
+        dfs(root->left, currSum, target);
+        dfs(root->right, currSum, target);
+
+        // 5. 【回溯关键】！
+        // 我要撤退了，把我的前缀和记录删掉，免得干扰我的兄弟节点
+        prefixMap[currSum]--;
+    }
+
+    int pathSum(TreeNode* root, int targetSum) {
+        // 初始化：前缀和为 0 的情况出现 1 次
+        // 代表如果 currSum 刚好等于 target，那么 currSum - target = 0，这也是一条有效路径
+        prefixMap[0] = 1;
+        
+        dfs(root, 0, targetSum);
+        return count;
+    }
+};
+
+
+
+
