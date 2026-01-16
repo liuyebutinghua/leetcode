@@ -1,0 +1,76 @@
+/*
+1. 核心直觉：寻找“分叉点”
+想象这是一家公司的组织架构图，root 是 CEO，p 和 q 是两个员工。我们要找他们的最近共同上司。
+
+只有两种情况：
+
+情况 A（分居两侧）： p 在某个领导的左部门，q 在该领导的右部门。 那么这个领导（当前节点）肯定就是最近公共祖先。
+
+情况 B（上下级关系）： p 是 q 的直系上司（或者反过来）。 那么 p 自己就是最近公共祖先。
+
+2. 递归策略：做一个“汇报系统”
+我们设计一个递归函数（就是题目给的这个函数），它的任务是**“去下面找 p 或者 q”**。
+
+对于每一个节点 root，它的职责如下：
+
+问左孩子：你那边找到 p 或者 q 了吗？（记为 left）
+
+问右孩子：你那边找到 p 或者 q 了吗？（记为 right）
+
+汇总信息，向上汇报。
+
+具体的汇报逻辑（核心！）：
+终止条件 1（到底了）：如果 root 是空 (nullptr)，说明没找到，返回 nullptr。
+
+终止条件 2（找到了）：如果 root 等于 p 或者 root 等于 q，说明我就是你要找的人！直接返回我自己（root）。
+
+注意：这里有一个隐藏的优化。如果我找到了 p，我就直接返回了，不会再去 p 下面找 q 了。这刚好符合“情况 B”，如果 q 在 p 下面，那 p 就是祖先。
+
+处理左右孩子的反馈：
+
+如果是 情况 A：左边说“找到了”，右边也说“找到了”（即 left != null 且 right != null）。
+
+说明 p 和 q 一个在左，一个在右。
+
+结论：我（当前 root）就是最近公共祖先！ 返回我自己。
+
+如果是 情况 B：
+
+只有左边返回了东西（右边是 null）：说明 p 和 q 都在左边。返回 left。
+
+只有右边返回了东西（左边是 null）：说明 p 和 q 都在右边。返回 right。
+
+如果都没找到：左右都是 null，说明这棵子树里没这俩人。返回 nullptr。
+*/
+
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        // 1. 终止条件 / Base Case
+        // 如果越过叶子节点，或者找到了 p，或者找到了 q，就直接返回当前节点
+        if (root == nullptr || root == p || root == q) {
+            return root;
+        }
+
+        // 2. 递归（去左右子树找） - 后序遍历的逻辑
+        TreeNode* left = lowestCommonAncestor(root->left, p, q);
+        TreeNode* right = lowestCommonAncestor(root->right, p, q);
+
+        // 3. 处理汇报（核心逻辑）
+        
+        // 情况 A: 左右两边都有返回值
+        // 说明 p 和 q 分别在 root 的两侧，那 root 就是 LCA
+        if (left != nullptr && right != nullptr) {
+            return root;
+        }
+
+        // 情况 B: 只有一边有返回值
+        // 说明 p 和 q 都在那一侧（或者其中一个是另一个的祖先）
+        // 如果 left 有值，就返回 left；否则返回 right
+        if (left != nullptr) {
+            return left;
+        }
+        
+        return right;
+    }
+};
