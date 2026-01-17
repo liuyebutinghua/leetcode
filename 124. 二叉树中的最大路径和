@@ -1,0 +1,49 @@
+/*
+我们需要设计一个递归函数 maxGain(node)。这个函数在处理当前节点 node 时，必须做 两件事（分别对应“对内”和“对外”）：
+
+A. “对外”汇报（返回值）：我能给父节点提供多大的收益？
+父节点想要连上我，是为了让它自己的路径变长。 但是，父节点连上我之后，只能选择走我的左边 OR 走我的右边，不能同时走两边（否则就分叉了，不叫路径了）。
+
+对外贡献公式：node->val + max(左子树贡献, 右子树贡献)
+
+注意：如果我的左右子树贡献是负数，那不如不连，直接算作 0。
+
+B. “对内”结算（更新全局答案）：以“我”为拐点的路径最大是多少？
+既然我都到了这里，我有机会连接左边和右边，形成一个 “倒V”字型 的路径。这条路径虽然不能汇报给上级（因为分叉了），但它可能是全局最大的。
+
+内部结算公式：node->val + 左子树贡献(>0) + 右子树贡献(>0)
+
+用这个值去挑战并更新全局变量 maxSum。
+*/
+class Solution {
+public:
+    // 全局变量，记录遍历过程中遇到的最大路径和
+    int maxSum = INT_MIN;
+
+    // 递归函数：计算节点对外提供的最大贡献值
+    int maxGain(TreeNode* node) {
+        if (node == nullptr) {
+            return 0;
+        }
+
+        // 1. 递归计算左右子树的贡献
+        // 如果子树返回负数，我们宁愿不选它（当作 0 处理）
+        int leftGain = max(maxGain(node->left), 0);
+        int rightGain = max(maxGain(node->right), 0);
+
+        // 2. 【对内结算】：更新全局最大值
+        // 以当前节点为"拐点"，连接左右两边的路径和
+        int priceNewPath = node->val + leftGain + rightGain;
+        maxSum = max(maxSum, priceNewPath);
+
+        // 3. 【对外汇报】：返回给父节点的最大贡献
+        // 注意：只能选左边或右边其中一条路，不能两条都选
+        return node->val + max(leftGain, rightGain);
+    }
+
+    int maxPathSum(TreeNode* root) {
+        maxGain(root);
+        return maxSum;
+    }
+};
+
