@@ -55,3 +55,32 @@ public:
 
     }
 };
+
+
+//第二次做              问题没有及时想到queue   ，vector<int> temp; 在每一个while循环后，就会更新  不用故意更新
+class Solution {
+public:
+	vector<vector<int>> levelOrder(TreeNode* root) {
+		vector<vector<int>> result;
+		if (root == nullptr) return result;
+		queue<TreeNode*> nodeaddr;
+		nodeaddr.push(root);
+		int num_size = 0;
+		while (!nodeaddr.empty())
+		{
+			num_size = nodeaddr.size();
+			vector<int> temp;
+			for (int i = 0; i < num_size; i++)
+			{
+				TreeNode* temp_addr = nodeaddr.front();
+				temp.push_back(temp_addr->val);
+				nodeaddr.pop();
+				if(temp_addr->left!=nullptr) nodeaddr.push(temp_addr->left);
+				if(temp_addr->right != nullptr)nodeaddr.push(temp_addr->right);
+			}
+			result.push_back(temp);
+		}
+		return result;
+	}
+};
+
