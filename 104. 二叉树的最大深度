@@ -18,12 +18,12 @@ public:
 	int maxDepth(TreeNode* root) {
 		if (root == nullptr)
 		{
-			return 0;
+			return 0;   //这里返回的是0  不是1   因为空节点的节点数就是0 
 		}
 		int left_deep = maxDepth(root->left);
 		int right_deep = maxDepth(root->right);
 
-		return max(left_deep, right_deep) + 1;
+		return max(left_deep, right_deep) + 1;  //当后节点都为空时 返回1 代表这只有1个节点
 
 	}
 };
