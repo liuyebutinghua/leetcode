@@ -82,4 +82,29 @@ public:
 
 
 
+//第二次做   想到了上面比较高级的办法 但是对于算法的执行条件没有考虑好
+class Solution {
+public:
+
+	void flatten(TreeNode* root) {
+		if (root == nullptr) return;
+		TreeNode* curr = root;
+		while (curr != nullptr)
+		{
+			if (curr->left != nullptr)    //✳✳✳✳✳✳✳✳✳✳✳✳✳✳✳✳✳✳✳✳✳  没有考虑到左子树有节点时才需要裁剪 导致裁剪操作不完全
+			{
+				TreeNode* pre = curr->left;//左字数最右边的节点
+				while (pre->right != nullptr)
+				{
+					pre = pre->right;
+				}
+				pre->right = curr->right;
+				curr->right = curr->left;
+				curr->left = nullptr;
+			}
+			curr = curr->right;
+		}
+	}
+};
+
 
