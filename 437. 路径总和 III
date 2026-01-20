@@ -83,6 +83,43 @@ public:
     }
 };
 
+//第二次做
+
+
+class Solution {
+public:
+    unordered_map<long long, int> sum_map;//long long代表前节点的和   int出现的个数
+    int count;//路径的个数
+
+    void dfs(TreeNode* root, long long currsum, int targetSum)
+    {
+        if (root == nullptr) return ;
+          
+        currsum = currsum + root->val;
+        
+
+        if (sum_map.count(currsum -targetSum))  //※※※※※※※※※※※※是currsum -targetSum 不是targetSum-currsum    找的是有咩有中间的路径是满足条件的
+        {
+            count += sum_map[currsum - targetSum];
+        }
+        sum_map[currsum]++;
+
+        dfs(root->left, currsum, targetSum);//※※※※※※※※※※※※是targetSum  不是currsum -targetSum   
+        dfs(root->right, currsum, targetSum);
+
+        sum_map[currsum]--;
+
+
+    }
+
+    int pathSum(TreeNode* root, int targetSum) {
+        if (root == nullptr) return 0;
+        sum_map[0] = 1;
+        dfs(root,0, targetSum);
+        return count;
+
+    }
+};
 
 
 
