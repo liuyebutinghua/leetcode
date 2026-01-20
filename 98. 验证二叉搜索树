@@ -45,6 +45,24 @@ public:
 	
 };
 
+//第二遍做的内容
+class Solution {
+public:
+	bool isValidBST(TreeNode* root) {//中序排列
+		if (root == nullptr) return true;
+		bool left_bool = isValidBST(root->left);
+		if (max_val < root->val)   max_val = root->val;//左边的值必须小于它右边的值
+		else return false;
+		bool right_bool = isValidBST(root->right);
+
+		return left_bool && right_bool;
+
+	}
+
+	long long max_val = LONG_MIN;//左边最大的值      防止root->val为INT_MIN  导致max_val < root->val判断错误
+
+};
+
 
 补充知识点：
 记住一个最核心的口诀，以后你永远不会搞混：
