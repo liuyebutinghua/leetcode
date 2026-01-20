@@ -47,3 +47,26 @@ public:
     }
 };
 
+
+//第二次做
+class Solution {
+public:
+	int maxsum=INT_MIN;
+
+	int  my_maxpathsum(TreeNode* root)
+	{
+		if (root == nullptr) return 0;
+                                                          //※※※    在这还出现了调用错误     调用了maxPathSum   逻辑不清晰
+		int leftnum = max(my_maxpathsum(root->left),0);   //※※※   没有注意到  如果左子树或者右子树为负值  需要舍去   因为咱们求的是最大值
+		int rightnum = max(my_maxpathsum(root->right),0);
+
+		maxsum = (maxsum>(leftnum + rightnum + root->val))? maxsum: (leftnum + rightnum + root->val);
+
+		return max(leftnum, rightnum) + root->val;
+	}
+
+	int maxPathSum(TreeNode* root) {
+		my_maxpathsum(root);
+		return maxsum;
+	}
+};
