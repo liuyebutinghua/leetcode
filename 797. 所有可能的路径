@@ -1,0 +1,112 @@
+/*
+✅ 正确的解题思路：DFS + 回溯
+我们要找从 0 到 n-1 的所有路径，想象你在走迷宫：
+
+出发：带一个小本本（path），把起点 0 写上去。
+
+选择：看着当前节点 u 能去哪里（遍历 graph[u]）。
+
+前进 (Recursion)：选一条路走过去，把新节点写在小本本上。
+
+判断：
+
+如果到了终点，把小本本上的路线抄下来（存入 result）。
+
+如果没到，继续从新节点出发做第 2 步。
+
+回溯 (Backtracking)：关键！ 当一条路走不通，或者已经走到底了，我们要退回到上一个路口，去试别的路。退回的时候，要把小本本上刚刚写的那个节点擦掉。
+
+
+*/
+
+class Solution {
+public:
+    vector<vector<int>> result;
+    vector<int> path;
+ 
+    void dfs(vector<vector<int>>& graph, int i)
+    {
+        int n = graph.size();
+        path.push_back(i);
+
+        if (i == n - 1)
+        {
+            result.push_back(path);
+        }
+        else
+        {
+            for (int neighbor : graph[i])
+            {
+                dfs(graph, neighbor);
+            }
+
+        }
+
+        //如果代码走到这  还没结束  表明这个节点无法达到 目的地  回退
+        path.pop_back();
+
+    }
+
+    vector<vector<int>> allPathsSourceTarget(vector<vector<int>>& graph) {
+
+        result.clear();
+
+        path.clear();
+
+        dfs(graph,0);
+
+        return result;
+    }
+};
+
+
+
+
+//AI的代码
+class Solution {
+public:
+    // 存放最终所有结果
+    vector<vector<int>> result;
+    // 存放当前正在走的这一条路径
+    vector<int> path;
+
+    void dfs(vector<vector<int>>& graph, int currNode) {
+        int n = graph.size();
+
+        // 1. 进门先登记：把当前节点加入路径
+        path.push_back(currNode);
+
+        // 2. 判断是不是终点 (Base Case)
+        if (currNode == n - 1) {
+            // 到达终点，把当前路径存入结果集
+            result.push_back(path);
+            // 这里不需要 return，因为后面 pop_back 会处理回溯
+            // 但加上 return 也可以，但是要在return 前  result.push_back(path);后   加上  path.pop_back();
+        } else {
+            // 3. 没到终点，继续找邻居 (Recursive Step)
+            // 直接遍历 graph[currNode] 里的邻居，不用自己造 map
+            for (int neighbor : graph[currNode]) {
+                dfs(graph, neighbor);
+            }
+        }
+
+        // 4. 【关键】回溯 (Backtracking)
+        // 这一层的事情做完了（或者路走通了，或者走不通了），
+        // 在返回上一层父节点之前，要把自己从路径里擦掉！
+        // 否则去走别的分岔路时，会带着旧的节点。
+        path.pop_back();
+    }
+
+    vector<vector<int>> allPathsSourceTarget(vector<vector<int>>& graph) {
+        // 清空（虽然 LeetCode 每次会重新实例化，但是个好习惯）
+        result.clear();
+        path.clear();
+        
+        // 从节点 0 开始出发
+        dfs(graph, 0);
+        
+        return result;
+    }
+};
+
+
