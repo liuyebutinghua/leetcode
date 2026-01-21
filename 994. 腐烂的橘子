@@ -1,0 +1,245 @@
+/*
+
+1. 核心思维：层序遍历 (BFS)
+想象一下：
+
+2 是初始丧尸。
+
+1 是人类。
+
+0 是墙壁。
+
+每一分钟，所有丧尸都会同时咬一口他们上下左右的人类，把人类变成新丧尸。
+
+为什么用 BFS？
+
+题目问的是“最小分钟数”。
+
+BFS 的特性就是**“一圈一圈往外扩”**。
+
+第 1 圈（第 1 分钟）被感染的，第 2 圈（第 2 分钟）被感染的……这种“层层推进”的逻辑天然对应 BFS。DFS（一条道走到黑）在这里完全不适用。
+
+2. 解题步骤
+我们需要一个 队列 (Queue) 来模拟时间的流逝。
+
+第一步：初始化（第 0 分钟）
+
+遍历整个网格。
+
+把所有一开始就是烂橘子 2 的坐标，统统加入队列（它们是病毒源头）。
+
+同时统计新鲜橘子 1 的总数 freshCount。
+
+特判：如果一开始 freshCount 就是 0，直接返回 0（没橘子可烂）。
+
+第二步：开始扩散（BFS 循环）
+
+只要队列不为空，且还有新鲜橘子没烂完：
+
+时间 + 1。
+
+关键点：记录当前队列的长度 n。这意味着这一轮我们只处理“当前这一分钟”存在的烂橘子。
+
+循环 n 次，取出队头（老丧尸），看它的上下左右：
+
+如果是新鲜橘子 1：
+
+把它变成烂橘子 2（避免重复访问）。
+
+freshCount 减 1。
+
+把它加入队列（它下一分钟会去咬别人）。
+
+第三步：结算
+
+如果 BFS 结束了，freshCount 还是大于 0，说明有些橘子被墙隔绝了，永远烂不到。返回 -1。
+
+否则，返回记录的时间 minutes。
+
+*/
+
+//我的代码
+
+/*
+其中容易错的点
+❌ 错误 1：方向写错了（手滑了？）
+请看你的方向数组：
+
+C++
+int dirs[4][2] = { {1,0},{-1,0},{0,1},{0,-2}}; 
+//                                     ^^^^^ 这里！
+问题：{0, -2} 表示向左移动 2 格。
+
+后果：橘子只能传染相邻的，不能隔山打牛。这里应该写 -1。
+
+修正：{0, -1}。
+
+❌ 错误 2：边界判断漏了第 0 行和第 0 列（最常见错误）
+请看这一行：
+
+C++
+if (nr > 0 && nr < rows && nc > 0 && nc < cols && grid[nr][nc] == 1)
+//     ^                   ^
+//     这里不对             这里不对
+问题：数组下标是从 0 开始的。
+
+你写 nr > 0，意味着如果是第 0 行（nr=0），条件变成 0 > 0 (False)，直接跳过了。
+
+这导致地图的最上面一行和最左边一列永远不会被传染。
+
+修正：必须包含 0，所以要用 >=。
+
+C++
+if (nr >= 0 && ... && nc >= 0 ...
+❌ 错误 3：时间计算会“多算一分钟”
+你的循环条件是：
+
+C++
+while (!huaijuzi.empty()) 
+{
+    minutes++; 
+    // ...
+}
+场景模拟：
+
+假设还有最后一个好橘子。
+
+第 1 分钟：你把它传染了，把它加入队列。此时 haojuzi_count 变成 0 了。
+
+第 2 分钟：队列不为空（刚才那个新坏的橘子在里面）。minutes 变成 2。你取出橘子，发现周围没人可传了。循环结束。
+
+结果：本来只要 1 分钟，你返回了 2 分钟。
+
+修正：在 while 里加一个条件：只要好橘子还没死完，我们才继续计时。如果好橘子已经是 0 了，就不用进下一轮循环了。
+
+*/
+
+
+class Solution {
+public:
+    int orangesRotting(vector<vector<int>>& grid) {
+        int rows = grid.size();
+        int cols = grid[0].size();
+
+        int haojuzi_count = 0;
+        
+        queue<pair<int, int>> huaijuzi;
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                if (grid[i][j] == 2)
+                {
+                    huaijuzi.push({i,j});
+                }
+                else if (grid[i][j] == 1)
+                {
+                    haojuzi_count++;
+                }
+            }
+        }
+
+        if (haojuzi_count == 0) return 0;
+
+        int minutes = 0;
+        int dirs[4][2] = { {1,0},{-1,0},{0,1},{0,-1}};
+
+
+        while (!huaijuzi.empty()&& haojuzi_count!=0)
+        {
+            minutes++;
+            int size_ganran = huaijuzi.size();
+
+            for (int i = 0; i < size_ganran; i++)
+            {
+                auto current = huaijuzi.front();
+                int r = current.first;
+                int c = current.second;
+                huaijuzi.pop();
+
+                for (auto& dir : dirs)
+                {
+                    int nr = dir[0] + r;
+                    int nc = dir[1] + c;
+
+                    if (nr >= 0 && nr < rows && nc>=0 && nc < cols && grid[nr][nc] == 1)
+                    {
+                        grid[nr][nc] = 2;
+                        haojuzi_count--;
+                        huaijuzi.push({ nr ,nc});
+                    }
+                }
+            }
+       
+        }
+
+
+        if (haojuzi_count != 0) return -1;
+
+        return minutes;
+    }
+};
+
+//AI代码
+class Solution {
+public:
+    int orangesRotting(vector<vector<int>>& grid) {
+        int rows = grid.size();
+        int cols = grid[0].size();
+
+        queue<pair<int, int>> q;
+        int freshCount = 0;
+
+        // 1. 初始化：找出所有烂橘子进队列，统计新鲜橘子数量
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == 2) {
+                    q.push({ i, j }); // 病毒源头入队
+                }
+                else if (grid[i][j] == 1) {
+                    freshCount++;   // 统计幸存者
+                }
+            }
+        }
+
+        // 特判：如果本来就没有新鲜橘子，直接返回 0
+        if (freshCount == 0) return 0;
+
+        int minutes = 0;
+        int dirs[4][2] = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} }; // 上下左右方向数组
+
+        // 2. BFS 循环：只要队列有烂橘子，且还有新鲜橘子没被感染
+        while (!q.empty() && freshCount > 0) {
+            minutes++; // 时间流逝一分钟
+
+            // 【关键】只处理当前这一层的烂橘子
+            int size = q.size();
+            for (int i = 0; i < size; i++) {
+                pair<int, int> current = q.front();
+                int r = current.first;  // 必须用 .first，可读性差
+                int c = current.second; // 必须用 .second
+                q.pop();
+
+                // 向四个方向扩散
+                for (auto& d : dirs) {
+                    int nr = r + d[0];
+                    int nc = c + d[1];
+
+                    // 检查边界，且必须是新鲜橘子才能感染
+                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == 1) {
+                        grid[nr][nc] = 2; // 变成烂橘子（标记已访问）
+                        freshCount--;     // 新鲜橘子少一个
+                        q.push({ nr, nc }); // 加入队列，下分钟它去感染别人
+                    }
+                }
+            }
+        }
+
+        // 3. 结算：如果还有新鲜橘子幸存，说明不可能完全腐烂
+        return freshCount == 0 ? minutes : -1;
+    }
+};
+
+
+
