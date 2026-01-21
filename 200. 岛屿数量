@@ -1,0 +1,74 @@
+/*
+
+1. 核心思维：原子弹“炸”岛战术 💣
+想象你是一个指挥官，地图（二维数组）就在你面前。
+
+'1' 是敌军的基地（陆地）。
+
+'0' 是海洋。
+
+敌人的基地是连成一片的，一片就是一个“岛屿”。
+
+你的任务： 数一数有多少个独立的敌军兵团（岛屿）。
+
+操作步骤：
+
+地毯式搜索：从地图的左上角开始，一行一行地扫描。
+
+发现目标：当你遇到第一个 '1' 时，说明你发现了一个新岛屿！
+
+马上拿出小本本：岛屿数量 + 1。
+
+毁灭打击（关键步骤）：
+
+为了防止之后重复计算这个岛屿，你需要立刻向这个位置投下一枚“原子弹”。
+
+这枚原子弹有连锁反应：它会把当前位置炸成 '0'（海水），并且蔓延到它的上下左右，把连着的 '1' 全部炸成 '0'。
+
+只要是连着的陆地，瞬间全部沉没，地图上只剩下海水。
+
+继续搜索：继续扫描剩下的格子。如果再遇到 '1'，说明那是另一个独立的岛屿（因为它没被刚才的连锁反应炸掉），重复上述过程。
+
+
+
+*/
+
+class Solution {
+public:
+    void dfs(vector<vector<char>>& grid, int r, int c)
+    {
+        int nr= grid.size();
+        int nc = grid[0].size();
+        if (r < 0 || c < 0 || r >= nr || c >= nc|| grid[r][c]=='0') return;
+
+        grid[r][c] = '0';//轰炸掉
+        
+        dfs(grid, r, c-1);
+        dfs(grid, r, c+1);
+        dfs(grid, r+1, c);
+        dfs(grid, r-1, c);
+    }
+
+
+    int numIslands(vector<vector<char>>& grid) {
+        if (grid.empty())return 0;
+        int r = grid.size();
+        int c = grid[0].size();
+        int count = 0;
+        for (int i = 0; i < r; i++)
+        {
+            for (int j = 0; j < c; j++)
+            {
+                if (grid[i][j] == '1')
+                {
+                    count++;
+                    dfs(grid, i, j);
+                }
+                
+            }
+        }
+        return count;
+    }
+};
+
+
