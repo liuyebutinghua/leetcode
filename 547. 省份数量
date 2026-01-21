@@ -1,0 +1,76 @@
+/*
+1. 核心思维：朋友圈拉群
+想象一下，isConnected 矩阵就是一个巨大的社交网络表格。
+
+城市是 人。
+
+isConnected[i][j] = 1 代表 i 和 j 是 微信好友。
+
+省份 就是一个 微信群。哪怕 A 不认识 C，但 A 认识 B，B 认识 C，那 A、B、C 都在同一个群里。
+
+你的任务： 数一数一共有几个微信群。
+
+2. 解题步骤 (DFS 版)
+这道题用 DFS 最顺手。
+
+准备工作： 我们需要一个“签到表” visited 数组，记录哪个人已经被拉进群了。
+
+主逻辑 (Main Loop)：
+
+按顺序遍历每一个人（城市 0 到 n-1）。
+
+检查签到表：如果这个人还没进群（visited[i] == false）：
+
+说明发现了一个新群！ 省份数量 +1。
+
+拉人 (DFS)：立刻把这个人，以及他的好友、好友的好友……全部抓出来，在 visited 上打钩。
+
+拉人逻辑 (DFS 函数)：
+
+我现在正在处理城市 i。
+
+先把城市 i 标记为 visited。
+
+查阅通讯录：遍历 isConnected 矩阵的第 i 行。
+
+如果发现 isConnected[i][j] == 1（j 是 i 的朋友）并且 j 还没被访问过：
+
+递归调用 dfs(j)，去把 j 的朋友也拉进群。
+
+*/
+class Solution {
+public:
+
+    void dfs(vector<vector<int>>& isConnected, vector<bool> &visited,int i)
+    {
+        visited[i] = true;
+
+        for (int j = 0; j < isConnected.size(); j++)
+        {
+            if (!visited[j] && isConnected[i][j] == 1)
+            {
+                dfs(isConnected, visited, j);
+            }
+        }
+        return;
+    }
+
+
+
+    int findCircleNum(vector<vector<int>>& isConnected) {
+        int n = isConnected.size();
+
+        vector<bool> visited(n, false);
+
+        int count = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (visited[i] == false)
+            {
+                count++;
+                dfs(isConnected, visited,i);
+            }
+        }
+        return count;
+    }
+};
