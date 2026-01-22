@@ -1,0 +1,224 @@
+/*
+想象一下你查英语字典： 你要查 "apple"。
+
+你不会把字典里所有的单词都看一遍。
+
+你会先找 A 开头的区域。
+
+再在 A 区域里找 P 开头的区域。
+
+再找 P -> L -> E。
+
+这就是 Trie 树的逻辑：将单词拆解成字符，一个字符对应树的一个节点，路径代表单词。
+
+1. 核心设计思路
+要实现 Trie，我们需要定义两个东西：节点 (Node) 和 树 (Tree)。
+
+A. 节点的设计 (TrieNode)
+一个节点代表一个字符（比如 'a'）。由于题目通常只包含小写英文字母（a-z），每个节点最多有 26 个孩子。
+
+我们需要在节点里存两个信息：
+
+子节点数组 (children)：一个大小为 26 的指针数组。
+
+children[0] 指向 'a' 的下一个节点。
+
+children[1] 指向 'b' 的下一个节点。
+
+...
+
+如果 children[i] 是空的 (nullptr)，说明没有这个字符的路。
+
+结束标记 (isEnd)：一个布尔值。
+
+比如插入了 "apple"，走到 'e' 这个节点时，要标记 isEnd = true。
+
+如果不标记，当你查 "app" 时，虽然有这条路，但 "app" 并没有被作为一个完整单词插入过，所以应该返回 false。
+
+B. 树的操作逻辑
+初始化 (Trie)：
+
+创建一个空的根节点 (root)。根节点不包含字符。
+
+插入 (insert)：
+
+从 root 开始，遍历单词的每个字符。
+
+如果当前字符对应的子节点不存在，就新建一个。
+
+如果存在，就走过去。
+
+走到最后一个字符的节点时，把它的 isEnd 设为 true。
+
+查找单词 (search)：
+
+从 root 开始，顺着字符往下走。
+
+如果走到一半发现路断了（子节点是空），直接返回 false。
+
+如果顺利走完了所有字符，还需要检查当前节点的 isEnd 是否为 true。
+
+查找前缀 (startsWith)：
+
+逻辑和 search 几乎一模一样。
+
+唯一的区别是：只要能顺着路走完前缀就行，不用管 isEnd 是 true 还是 false。
+
+*/
+
+//AI的代码
+class Trie {
+private:
+    // 定义内部节点结构体
+    struct TrieNode {
+        // 指向子节点的指针数组，对应 a-z
+        TrieNode* children[26];
+        // 标记该节点是否是一个单词的结尾
+        bool isEnd;
+
+        // 构造函数：初始化
+        TrieNode() {
+            isEnd = false;
+            for (int i = 0; i < 26; i++) {
+                children[i] = nullptr;
+            }
+        }
+    };
+
+    TrieNode* root;
+
+public:
+    // 初始化 Trie 对象
+    Trie() {
+        root = new TrieNode();
+    }
+
+    // 插入单词
+    void insert(string word) {
+        TrieNode* node = root;
+        for (char c : word) {
+            // 计算字符对应的索引 (0-25)
+            int index = c - 'a';
+            // 如果路不存在，就铺路（新建节点）
+            if (node->children[index] == nullptr) {
+                node->children[index] = new TrieNode();
+            }
+            // 走到下一个节点
+            node = node->children[index];
+        }
+        // 单词走完了，标记当前节点为终点
+        node->isEnd = true;
+    }
+
+    // 查找单词
+    bool search(string word) {
+        TrieNode* node = root;
+        for (char c : word) {
+            int index = c - 'a';
+            // 如果路断了，说明单词不存在
+            if (node->children[index] == nullptr) {
+                return false;
+            }
+            node = node->children[index];
+        }
+        // 走完了，还要看这里是不是一个单词的结尾
+        // 比如树里有 "apple"，你查 "app"，路径存在，但 'p' 的 isEnd 是 false
+        return node->isEnd;
+    }
+
+    // 查找前缀
+    bool startsWith(string prefix) {
+        TrieNode* node = root;
+        for (char c : prefix) {
+            int index = c - 'a';
+            if (node->children[index] == nullptr) {
+                return false;
+            }
+            node = node->children[index];
+        }
+        // 只要能走完，就说明有这个前缀，不用管 isEnd
+        return true;
+    }
+};
+
+ // 我的代码
+class Trie {
+private:
+    struct TrieNode {
+        TrieNode* children[26];
+        bool isend;
+
+        TrieNode() {
+            isend = false;
+            for (int i = 0; i < 26; i++)
+            {
+                children[i] = nullptr;
+            }
+        
+        }
+
+
+    };
+    TrieNode* root;//定值不变
+
+public:
+    Trie() {
+        root = new TrieNode();
+    }
+
+    void insert(string word) {
+        
+        TrieNode* node = root;
+        for (char c : word)
+        {
+            int index = c - 'a';
+            if (node->children[index] == nullptr)
+            {
+                TrieNode*  newnode = new TrieNode();
+                node->children[index] = newnode;
+            }
+            node = node->children[index];
+
+        }
+        node->isend = true;//这个字符串遍历一遍结束，在最后一个字符 的isend  变为true  表示这个单词结束
+    }
+
+    bool search(string word) {
+        TrieNode* node = root;
+
+        for (char c : word)
+        {
+            int index = c - 'a';
+            if (node->children[index] == nullptr)
+            {
+                return false;
+            }
+
+            node = node->children[index];
+        }
+
+        return node->isend;
+    }
+
+    bool startsWith(string prefix) {
+        TrieNode* node = root;
+
+        for (char c : prefix)
+        {
+            int index = c - 'a';
+            if (node->children[index] == nullptr)
+            {
+                return false;
+            }
+
+            node = node->children[index];
+        }
+
+        return true;
+
+    }
+};
+
+
+
+
