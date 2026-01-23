@@ -125,6 +125,57 @@ public:
 易错点：
 在 C++ 中，局部变量（在函数内部定义的 int）如果只声明不赋值，它的值是“垃圾值”（随机的内存残留值），而不是默认的 0。
 */
+//第二次做
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<vector<int>> bixu(numCourses);//bixu[i]=[a,c]  表示 i修完后， 可以修a ,c  
+
+        vector<int> rudubiao(numCourses,0); //rudubiao[0]=1表示，要想修0 ，还有一门课要提前修
+
+        queue<int> xiukeqingdan;//当rudubiao表为0时，可以加入xiukeqingdan进行修课
+
+      
+        for (auto& p : prerequisites)
+        {
+            int pre = p[0];
+            int cur = p[1];
+            bixu[pre].push_back(cur);
+            rudubiao[cur]++;
+        }
+
+        for (int i = 0; i < numCourses; i++)
+        {
+            if (rudubiao[i] == 0)
+            {
+                xiukeqingdan.push(i);
+            }
+
+        }
+
+        int xiuke_num = 0;
+        while (!xiukeqingdan.empty())
+        {
+            int ke = xiukeqingdan.front();
+            xiukeqingdan.pop();
+            xiuke_num++;
+
+            for (auto& p : bixu[ke])
+            {
+                rudubiao[p]--;
+                if (rudubiao[p] == 0)
+                {
+                    xiukeqingdan.push(p);
+                }
+            }
+
+        }
+
+        return  xiuke_num == numCourses;
+
+
+    }
+};
 
 
 
