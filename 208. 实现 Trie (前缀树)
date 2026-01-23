@@ -219,6 +219,84 @@ public:
     }
 };
 
+//第二次做        在Trie() 中使用Trienode* root = new Trienode(); 相当于建立了一个局部变量   当Trie()运行完后， 全局变量root 为野指针
+        
+class Trie {
+
+private:
+
+    struct Trienode {
+
+        Trienode* nextnode[26];
+        bool isend;
+
+
+        Trienode()
+        {
+            isend = false;
+            for (int i = 0; i < 26; i++)
+            {
+                nextnode[i] = nullptr;
+            }
+        }
+
+    };
+
+    Trienode* root;
+
+public:
+    Trie() {
+         root = new Trienode();
+    }
+
+    void insert(string word) {
+        Trienode* node = root;
+
+        for (char p : word)
+        {
+            int index = p - 'a';
+            if (node->nextnode[index] == nullptr)
+            {
+                Trienode* newnode = new Trienode();
+                node->nextnode[index] = newnode;
+            }
+            node = node->nextnode[index];
+        }
+        node->isend = true;//在最后一个字符处 设为true
+    }
+
+    bool search(string word) {
+        Trienode* node = root;
+        for (char p : word)
+        {
+            int index = p - 'a';
+            if (node->nextnode[index] == nullptr)
+            {
+                return false;
+            }
+            node= node->nextnode[index];
+        }
+       
+        return node->isend;
+
+
+    }
+
+    bool startsWith(string prefix) {
+        Trienode* node = root;
+        for (char p : prefix)
+        {
+            int index = p - 'a';
+            if (node->nextnode[index] == nullptr)
+            {
+                return false;
+            }
+            node = node->nextnode[index];
+        }
+        return true;
+
+    }
+};
 
 
 
