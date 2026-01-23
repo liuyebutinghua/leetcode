@@ -181,6 +181,76 @@ public:
     }
 };
 
+
+
+//第二遍     错误点：1.判断标准不严谨     while (!huaijuzi.empty()&& haojizu!=0)     2.new_r >= 0 && new_r < r && new_c>=0 && new_c < c && grid[new_r][new_c] == 1  中  =0忽略
+class Solution {
+public:
+    int orangesRotting(vector<vector<int>>& grid) {
+        int haojizu = 0;
+        queue<pair<int, int>> huaijuzi;
+        int r = grid.size();
+        int c = grid[0].size();
+
+
+
+        for (int i = 0; i < r; i++)
+        {
+            for (int j = 0; j < c; j++)
+            {
+                if (grid[i][j] == 1)
+                {
+                    haojizu++;
+                }
+                if (grid[i][j] == 2)
+                {
+                    huaijuzi.push({i, j});
+                }
+            }
+        }
+
+        if (haojizu == 0) return 0;
+
+        int mount = 0;
+        int dirs[4][2] = { {0,1},{0,-1},{1,0},{-1,0} };
+
+        while (!huaijuzi.empty()&& haojizu!=0)
+        {
+            int huaijuzi_num = huaijuzi.size();
+            mount++;
+
+            for (int i = 0; i < huaijuzi_num; i++)
+            {
+                auto p = huaijuzi.front();
+                int p_r = p.first;
+                int p_c = p.second;
+                huaijuzi.pop();
+
+                for (auto& q : dirs)
+                {
+                    int new_r = p_r + q[0];
+                    int new_c = p_c + q[1];
+                    if (new_r >= 0 && new_r < r && new_c>=0 && new_c < c && grid[new_r][new_c] == 1)//发现好橘子
+                    {
+                        grid[new_r][new_c] = 2;
+                        haojizu--;
+                        huaijuzi.push({ new_r ,new_c });
+                    }
+
+                }
+
+            }
+        }
+
+        if (haojizu == 0)  return mount;
+        return -1;
+
+    }
+};
+
+
+
+
 //AI代码
 class Solution {
 public:
