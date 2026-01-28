@@ -1,0 +1,90 @@
+/*
+1. 核心问题：无序 vs 有序
+全排列 (你现在的写法)：讲究顺序。[1, 2] 和 [2, 1] 是不同的。每次都从 0 开始遍历，需要 used 数组防止重复使用。
+
+子集 (本题要求)：不讲究顺序。[1, 2] 和 [2, 1] 是同一个。不能回头看。
+
+
+*/
+
+//AI的代码
+class Solution {
+public:
+    vector<vector<int>> result;
+    vector<int> path;
+
+    // startIndex: 本层递归从哪里开始遍历（防止回头，去重）
+    void backtracking(vector<int>& nums, int startIndex) {
+        
+        // 1. 收集结果
+        // 注意：不像全排列需要等到叶子节点，子集问题中，
+        // 每一个节点（包括根节点空集）都是答案，所以进函数就 push
+        result.push_back(path);
+
+        // 2. 终止条件
+        // 其实可以不写，因为下面的循环 i < nums.size() 限制了，
+        // 当 startIndex 越界时，循环进不去，自然就 return 了。
+        if (startIndex >= nums.size()) {
+            return;
+        }
+
+        // 3. 单层搜索逻辑
+        // 【关键】：从 startIndex 开始，而不是从 0 开始
+        for (int i = startIndex; i < nums.size(); i++) {
+            path.push_back(nums[i]); // 处理节点
+            
+            // 递归：下一层从 i + 1 开始（永远只找它后面的元素）
+            backtracking(nums, i + 1); 
+            
+            path.pop_back();         // 回溯，撤销处理
+        }
+    }
+
+    vector<vector<int>> subsets(vector<int>& nums) {
+        result.clear();
+        path.clear();
+        
+        // 不需要 used 数组了
+        // 不需要外层循环控制长度了，一个递归全搞定
+        backtracking(nums, 0);
+        
+        return result;
+    }
+};
+
+
+//我的代码
+class Solution {
+public:
+    vector<vector<int>> result;
+    vector<int> path;         
+
+
+    void backtracking(vector<int>& nums, int startIndex)
+    {
+        result.push_back(path);
+
+        if (startIndex >= nums.size())
+        {
+            return;
+        }
+
+        for (int i = startIndex; i < nums.size(); i++)
+        {
+            path.push_back(nums[i]);
+
+            backtracking(nums, i+1);
+
+            path.pop_back();
+        }
+
+    }
+
+    vector<vector<int>> subsets(vector<int>& nums) {
+        result.clear();
+        path.clear();
+        int startIndex = 0;
+        backtracking(nums, startIndex);
+        return result;
+    }
+};
