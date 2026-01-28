@@ -1,0 +1,160 @@
+/*
+它和刚才讲的 78. 子集 非常像，但有两个核心区别：
+
+数字可以重复使用：选了 2，下次还能选 2。
+
+全是正整数：这意味着累加和会一直变大，不用担心像负数那样加着加着变小了。
+
+1. 核心思维：带“回放”键的决策树
+想象你在凑钱买东西（Target = 7），手里有面额 [2, 3, 6, 7] 的硬币，硬币无限多。
+
+第一层选择：你选了 2 元。
+
+第二层选择：
+
+注意！因为硬币无限，你依然可以选 2 元。
+
+或者你选 3 元、6 元...
+
+但是不能选之前的面额（比如为了去重，如果你这次选了 3，下次就不能回头选 2 了，否则会出现 [2, 3] 和 [3, 2] 重复）。
+
+关键逻辑：
+
+如果不重复使用（像子集/全排列）：递归时传入 i + 1，表示“下一层从下一个数开始”。
+
+如果可重复使用（本题）：递归时传入 i，表示“下一层还从当前这个数开始尝试”。
+
+2. 解题三要素
+我们需要修改一下回溯的模板：
+
+参数：
+
+target：我们要凑的目标值（每次减去选中的数，直到 0）。
+
+startIndex：当前从哪个下标开始选（防止回头，去重）。
+
+结束条件：
+
+target == 0：凑齐了！记录路径。
+
+target < 0：凑多了（爆了），直接返回。
+
+单层逻辑：
+
+从 startIndex 开始遍历 candidates。
+
+做选择：path.push(candidates[i])。
+
+递归（核心点）：dfs(target - candidates[i], i)。
+
+注意这里传的是 i，不是 i + 1！
+
+撤销选择：path.pop()。
+
+3. 剪枝优化（提速神器）
+如果 candidates 是 有序 的（比如 [2, 3, 6, 7]），当你的 target 剩下 1，而当前的数字是 2 时：
+
+2 已经比 1 大了，那后面的 3, 6, 7 肯定更大，完全没必要去试了。
+
+直接 break，退出循环。
+
+所以，代码开头先对数组 排序 是个好习惯。
+
+题目	    能否回头(used)	       下一层递归(index)	    典型特征
+全排列	  能 (需 used 去重)	     从 0 开始	            讲究顺序 [1,2] != [2,1]
+子集	    不能 (用 startIndex)	 i + 1	                元素不可复用
+组合总和	不能 (用 startIndex)	 i (不动)	              元素可复用
+
+*/
+//AI代码
+class Solution {
+public:
+    vector<vector<int>> result;
+    vector<int> path;
+
+    void backtracking(vector<int>& candidates, int target, int startIndex) {
+        // 1. 结束条件
+        if (target == 0) {
+            result.push_back(path);
+            return;
+        }
+        // 如果 target < 0，其实在下面剪枝时已经拦截了，这里可以不写，但写上逻辑更完整
+
+        // 2. 遍历选择
+        for (int i = startIndex; i < candidates.size(); i++) {
+            
+            // 【剪枝优化】
+            // 如果当前这个数已经比剩下的 target 大了，后面的数肯定更大，直接不看了
+            if (target - candidates[i] < 0) {
+                break; 
+            }
+
+            path.push_back(candidates[i]); // 做选择
+
+            // 【关键点】
+            // 递归传入 i，而不是 i + 1
+            // 表示下一层依然可以重复选当前这个数 candidates[i]
+            backtracking(candidates, target - candidates[i], i);
+
+            path.pop_back(); // 回溯
+        }
+    }
+
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        result.clear();
+        path.clear();
+        
+        // 【关键】先排序，为了方便剪枝
+        sort(candidates.begin(), candidates.end());
+        
+        backtracking(candidates, target, 0);
+        
+        return result;
+    }
+};
+
+
+//我的代码
+class Solution {
+public:
+    vector<vector<int>> result;
+    vector<int> path;
+
+    void backtracking(vector<int>& candidates, int target,int Index)
+    {
+        if (target == 0)
+        {
+            result.push_back(path);
+            return;
+        }
+
+        for (int i = Index; i < candidates.size(); i++)//i = Index的原因是不能回头
+        {
+            if (target - candidates[i] < 0)
+            {
+                break;
+            }
+
+            path.push_back(candidates[i]);
+
+            backtracking(candidates, target - candidates[i], i);//Index 传i的原因是   值可以重复使用
+
+            path.pop_back();
+
+        }
+
+    }
+
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        result.clear();
+        path.clear();
+
+        sort(candidates.begin(), candidates.end());
+
+        backtracking(candidates, target,0);
+        return result;
+    }
+};
+
+
+
