@@ -1,0 +1,157 @@
+/*
+解题思路：
+1. 核心思维：填空游戏
+想象一下，你手里有 [1, 2, 3] 三张扑克牌，桌子上有 3 个空位置。你需要把牌填进去。
+
+站在第 1 个位置前：
+
+你有 3 种选择：填 1，填 2，或者填 3。
+
+假设你选了 1。
+
+站在第 2 个位置前：
+
+你只剩 2 种选择：填 2 或 3（因为 1 用过了）。
+
+假设你选了 2。
+
+站在第 3 个位置前：
+
+你只剩 1 种选择：填 3。
+
+填入 3。
+
+结束：所有位置填满，你得到一个结果 [1, 2, 3]。记录下来。
+
+关键来了（回溯）： 为了找到其他组合，你必须把刚才填进去的牌拿出来，退回到上一步，重新做决定。
+
+把 3 拿出来（回到第 3 个位置）。
+
+把 2 拿出来（回到第 2 个位置）。
+
+这次在第 2 个位置，我不选 2 了，我选 3……
+
+这就是回溯的本质：做选择 -> 递归 -> 撤销选择。
+
+2. 解题三要素
+我们在写回溯代码时，只需要思考这三个问题：
+
+路径 (Path)：也就是上面的“空位置”，目前我们已经填了哪些数？
+
+选择列表 (Choice List)：当前这一步，还有哪些数是可以用的？（没被用过的数）。
+
+结束条件 (Base Case)：什么时候到达决策树底层？（当 path 的长度等于 nums 的长度时）。
+
+3. 代码模板（回溯法）
+回溯算法有一个万能模板，长得都差不多：
+
+C++
+void backtrack(路径, 选择列表) {
+    if (满足结束条件) {
+        result.add(路径);
+        return;
+    }
+
+    for (选择 in 选择列表) {
+        if (如果不合法/已经用过) continue;
+        
+        做选择;  // 1. 把数放进路径，标记为已用
+        backtrack(路径, 选择列表); // 2. 进入下一层
+        撤销选择; // 3. 【关键】把数拿出来，标记为未用 (回溯)
+    }
+}
+*/
+
+//AI代码
+class Solution {
+public:
+    vector<vector<int>> result; // 存放最终的所有排列
+    vector<int> path;           // 存放当前正在构建的一个排列
+    vector<bool> used;          // 记录哪些数字已经被选过了
+
+    void backtracking(vector<int>& nums) {
+        // 1. 结束条件：如果 path 填满了，说明找到了一组全排列
+        if (path.size() == nums.size()) {
+            result.push_back(path);
+            return;
+        }
+
+        // 2. 遍历选择列表（每次都从头扫描 nums）
+        for (int i = 0; i < nums.size(); i++) {
+            // 如果这个数已经在 path 里了，就跳过
+            if (used[i] == true) {
+                continue;
+            }
+
+            // --- 做选择 ---
+            used[i] = true;      // 标记为已用
+            path.push_back(nums[i]); // 加入路径
+
+            // --- 递归 ---
+            backtracking(nums);      // 进入下一层决策
+
+            // --- 撤销选择 (回溯) ---
+            path.pop_back();     // 移除最后一个数
+            used[i] = false;     // 标记为未用，给后面的循环机会
+        }
+    }
+
+    vector<vector<int>> permute(vector<int>& nums) {
+        result.clear();
+        path.clear();
+        // 初始化 used 数组，全是 false
+        used = vector<bool>(nums.size(), false);
+        
+        backtracking(nums);
+        return result;
+    }
+};
+
+
+
+
+//我的代码
+class Solution {
+public:
+    vector<vector<int>> result;//最终返回的结果
+    vector<int> path;//记录实时的路径 
+    vector<bool> used;//与nums 相对应  记录每个数字是否在该路径下使用
+
+    void backtracking(vector<int>& nums)
+    {
+        if (path.size() == nums.size())
+        {
+            result.push_back(path);
+            return;
+        }
+
+        for (int i = 0; i < nums.size(); i++)
+        {
+            if (used[i] == true)
+            {
+                continue;
+            }
+
+            used[i] = true;
+            path.push_back(nums[i]);
+
+            backtracking(nums);
+            path.pop_back();
+            used[i] = false;
+
+        }
+    }
+
+    vector<vector<int>> permute(vector<int>& nums) {
+        result.clear();
+        path.clear();
+        used = vector<bool>(nums.size(), false);
+        backtracking(nums);
+        return result;
+        
+    }
+};
+
+
+
+
