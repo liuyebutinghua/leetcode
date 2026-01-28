@@ -1,0 +1,147 @@
+/*
+解题思路：
+它和大家熟悉的“全排列”、“子集”问题非常像，但有一个显著的区别：它的每一层选择列表是不同的。
+
+1. 核心思维：多叉树的遍历
+假设输入字符串是 "23"：
+
+第一层决策：处理数字 '2'。它可以变成 a, b, 或 c。
+
+第二层决策：处理数字 '3'。它可以变成 d, e, 或 f。
+
+这天然构成了一棵树：
+
+逻辑流程：
+
+树的深度：就是输入数字的个数（比如 "23" 深度就是 2）。
+
+树的宽度：取决于每个数字对应的字母个数（比如 '2' 有 3 个字母，'7' 有 4 个字母）。
+
+我们的任务：用 DFS（深度优先搜索）走到这棵树的所有 叶子节点，把路径上的字符拼起来，就是答案。
+
+2. 解题三要素
+我们需要定义一个递归函数 dfs（或者叫 backtrack）：
+
+参数 (State)：
+
+index: 当前我们要处理第几个数字？
+
+index = 0 时，我们在看第一个数字（比如 '2'），从 "abc" 里挑一个。
+
+index = 1 时，我们在看第二个数字（比如 '3'），从 "def" 里挑一个。
+
+结束条件 (Base Case)：
+
+当 index == digits.size() 时。
+
+说明所有数字都处理完了，当前的路径（path）已经拼成了一个完整的字符串，把它加入结果集 result。
+
+单层逻辑 (Loop)：
+
+取出当前数字对应的字母表（比如 '2' -> "abc"）。
+
+遍历这个字母表：
+
+做选择：把当前字母加入 path。
+
+递归：dfs(index + 1)，去处理下一个数字。
+
+回溯：把当前字母从 path 弹出，去试下一个字母。
+
+*/
+
+
+
+
+
+//AI的代码
+#include <vector>
+#include <string>
+using namespace std;
+
+class Solution {
+public:
+    vector<string> result; // 存放最终结果
+    string path;           // 存放当前拼凑的字符串
+    
+    // 0. 建立数字到字母的映射表
+    // 下标 0 和 1 不对应字母，所以留空
+    const string letterMap[10] = {
+        "", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"
+    };
+
+    void backtracking(const string& digits, int index) {
+        // 1. 结束条件：处理完了所有数字
+        if (index == digits.size()) {
+            result.push_back(path);
+            return;
+        }
+
+        // 2. 找到当前数字对应的字母表
+        int digit = digits[index] - '0'; // 将字符 '2' 转为数字 2
+        string letters = letterMap[digit]; // 取出 "abc"
+
+        // 3. 遍历字母表
+        for (char c : letters) {
+            path.push_back(c);        // 处理：选 'a'
+            backtrack(digits, index + 1); // 递归：去处理下一个数字
+            path.pop_back();          // 回溯：撤销 'a'，准备选 'b'
+        }
+    }
+
+    vector<string> letterCombinations(string digits) {
+        result.clear();
+        path.clear();
+        
+        // 特判：如果输入为空，直接返回空列表
+        if (digits.empty()) {
+            return result;
+        }
+
+        backtracking(digits, 0);
+        return result;
+    }
+};
+
+
+
+//我的代码
+class Solution {
+public:
+    string anjian[10] = { "", "", "abc" ,"def","ghi","jkl","mno","pqrs","tuv","wxyz"};
+    vector<string> result;
+    string path;
+
+    void backtracking(string digits,int ceng)
+    {
+        if (path.size() == digits.size())
+        {
+            result.push_back(path);
+            return;
+        }
+    
+        int  haoma = digits[ceng]-'0';
+        string haoma_string = anjian[haoma];
+
+        for (char c: haoma_string)
+        {
+            path.push_back(c);
+
+            backtracking(digits, ceng+1);
+
+            path.pop_back();
+        }
+
+
+    }
+
+
+    vector<string> letterCombinations(string digits) {
+        result.clear();
+        path.clear();
+        backtracking(digits,0);
+        return result;
+
+    }
+};
+
