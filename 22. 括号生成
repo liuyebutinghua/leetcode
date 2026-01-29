@@ -1,0 +1,104 @@
+/*
+如果不加限制，生成 $2n$ 个字符的括号组合共有 $2^{2n}$ 种（每一位都可以是 ( 或 )）。
+但绝大多数都是无效的（比如 )( 或 ((）。我们的核心思路是：在生成的过程中，就只允许“合法”的括号出现，
+把不合法的扼杀在摇篮里。1. 核心思维：两个硬性指标想象你在画括号，手里有两个计数器：left：目前已经用了几个左括号
+(。right：目前已经用了几个右括号 )。你只需要遵守两条死规则，生成的就一定是合法的：左括号随时可以加，只要不超标：
+只要 left < n，你就可以放心地加一个 (。右括号必须“有的放矢”：你只有在 前面有“待匹配”的左括号 时，才能加右括号。
+也就是说：只有当 right < left 时，才能加 )。（如果 right == left，说明目前所有左括号都闭合了，你再加右括号就变成 ())，
+直接非法了）。
+
+
+2. 解题三要素
+参数：
+
+n: 总对数。
+
+left: 当前用了几个左括号。
+
+right: 当前用了几个右括号。
+
+str: 当前生成的字符串。
+
+结束条件：
+
+当字符串长度达到 2 * n 时（或者 left == n 且 right == n），说明生成完毕，加入结果集。
+
+单层逻辑：
+
+尝试加左括号：如果 left < n，递归调用 dfs(left + 1, right, str + "(")。
+
+尝试加右括号：如果 right < left，递归调用 dfs(left, right + 1, str + ")")。
+
+*/
+
+//AI代码
+class Solution {
+public:
+    vector<string> result;
+    string current;
+
+    void backtracking(int n, int left, int right) {
+        if (current.size() == 2 * n) {
+            result.push_back(current);
+            return;
+        }
+
+        if (left < n) {
+            current.push_back('(');
+            backtracking(n, left + 1, right);
+            current.pop_back(); // 回溯
+        }
+
+        if (right < left) {
+            current.push_back(')');
+            backtracking(n, left, right + 1);
+            current.pop_back(); // 回溯
+        }
+    }
+
+    vector<string> generateParenthesis(int n) {
+        result.clear();
+        current = "";
+        backtracking(n, 0, 0);
+        return result;
+    }
+};
+
+
+//我的代码
+class Solution {
+public:
+    vector<string> result;
+
+    string path;
+
+    void backtracking(int n, int left, int right)
+    {
+        if (path.size() == 2*n)
+        {
+            result.push_back(path);
+            return;
+        }
+
+        if (left < n)
+        {
+            path.push_back('(');
+            backtracking(n, left+1, right);
+            path.pop_back();
+        }
+
+        if (right < left)
+        {
+            path.push_back(')');
+            backtracking(n, left ,right + 1 );
+            path.pop_back();
+        }
+    
+    }
+    vector<string> generateParenthesis(int n) {
+        result.clear();
+        path.clear();
+        backtracking(n,0,0);
+        return result;
+    }
+};
