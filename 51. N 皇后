@@ -1,0 +1,188 @@
+/*
+不要被“困难”标签吓到，它的本质依然是：一层层做决定，不行就撤回。
+
+1. 核心思维：一行只放一个N 皇后的规则是：同行、同列、同斜线不能共存。
+如果我们直接在 $N \times N$ 的格子里瞎放，情况太多了。为了简化问题，
+我们利用一个规则：每一行必然有一个皇后，且只能有一个皇后。
+策略：Level 0 (递归第 0 层)：我们只负责在第 0 行找个位置放皇后。
+Level 1 (递归第 1 层)：我们只负责在第 1 行找个位置放皇后。
+...
+Level N：如果成功走到了第 N 行，说明前 N 行都放好了，找到了一组解！
+这样，我们就自动避免了“同行攻击”的问题，只需要检查同列和斜线即可。
+
+2. 解题三要素
+A. 参数
+n: 棋盘大小。
+
+row: 当前正在处理第几行（这是控制递归深度的变量）。
+
+chessboard: 当前棋盘的状态（二维字符数组）。
+
+B. 终止条件
+row == n：说明 0 到 n-1 行都已经放好了皇后。
+
+记录结果，然后返回。
+
+C. 单层逻辑 (在当前 row 做选择)
+遍历这一行的每一列 (col 从 0 到 n-1)。
+
+检查合法性 (isValid)：
+
+在这个位置 (row, col) 放皇后，会不会被上面的皇后攻击？
+
+如果合法：
+
+chessboard[row][col] = 'Q' (放置)
+
+backtracking(row + 1) (递归去放下一行)
+
+chessboard[row][col] = '.' (回溯，撤销，为了试探下一列)
+
+3. 如何检查合法性 (isValid)
+因为我们是一行一行从上往下放的，所以不用检查下面，也不用检查同行（因为每行只放一个）。 我们需要检查三个方向：
+
+正上方 (列冲突)：看看这一列上面有没有皇后。
+
+左上角斜线 (45度)：看看左上方有没有皇后。
+
+右上角斜线 (135度)：看看右上方有没有皇后。
+
+*/
+
+
+//AI的代码
+class Solution {
+public:
+    vector<vector<string>> result;
+
+    // 检查在 (row, col) 放皇后是否合法
+    bool isValid(int row, int col, vector<string>& chessboard, int n) {
+        // 1. 检查列 (正上方)
+        // 只需要检查到 row 之前的行，因为下面的还没放
+        for (int i = 0; i < row; i++) {
+            if (chessboard[i][col] == 'Q') {
+                return false;
+            }
+        }
+
+        // 2. 检查左上角斜线 (45度)
+        // i 往上走，j 往左走
+        for (int i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) {
+            if (chessboard[i][j] == 'Q') {
+                return false;
+            }
+        }
+
+        // 3. 检查右上角斜线 (135度)
+        // i 往上走，j 往右走
+        for (int i = row - 1, j = col + 1; i >= 0 && j < n; i--, j++) {
+            if (chessboard[i][j] == 'Q') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    void backtracking(int n, int row, vector<string>& chessboard) {
+        // 1. 终止条件：如果不小心递归到了第 n 行，说明前 n 行(0~n-1)都放好了
+        if (row == n) {
+            result.push_back(chessboard);
+            return;
+        }
+
+        // 2. 遍历当前行的每一列
+        for (int col = 0; col < n; col++) {
+            // 剪枝：如果当前位置能放，才继续
+            if (isValid(row, col, chessboard, n)) {
+                
+                // 做选择
+                chessboard[row][col] = 'Q';
+                
+                // 递归：去放下一行
+                backtracking(n, row + 1, chessboard);
+                
+                // 回溯：撤销选择
+                chessboard[row][col] = '.';
+            }
+        }
+    }
+
+    vector<vector<string>> solveNQueens(int n) {
+        result.clear();
+        // 初始化棋盘，全是 '.'
+        vector<string> chessboard(n, string(n, '.'));
+        
+        backtracking(n, 0, chessboard);
+        
+        return result;
+    }
+};
+
+//我的代码
+class Solution {
+public:
+    vector<vector<string>> result;
+
+    bool isValid(int rows, int cols, vector<string>& chessboard, int& n)
+    {
+        for (int i = 0; i < rows; i++)
+        {
+            if (chessboard[i][cols] == 'Q')
+            {
+                return false;
+            }
+        }
+
+        for (int i = rows - 1, j = cols - 1; i >= 0 && j >= 0; i--, j--)
+        {
+            if (chessboard[i][j] == 'Q')
+            {
+                return false;
+            }
+        }
+
+        for (int i = rows - 1, j = cols + 1; i >= 0 && j < n; i--, j++)
+        {
+            if (chessboard[i][j] == 'Q')
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    void backtracking(int &n,int rows, vector<string>& chessboard)
+    {
+        if (rows >= n)
+        {
+            result.push_back(chessboard);
+            return;
+        }
+
+        //说明这一行需要放一个皇后
+        for (int cols = 0; cols < n; cols++)
+        {
+            if (isValid(rows, cols, chessboard, n))//判断rows 行 cols 列能不能放皇后，如果可以 则继续往下递归  如果不行，就需要换列
+            {
+
+                chessboard[rows][cols] = 'Q';
+                backtracking(n, rows+1, chessboard);
+                chessboard[rows][cols] = '.';
+            }
+        }
+
+    
+    }
+
+
+    vector<vector<string>> solveNQueens(int n) {
+        result.clear();
+        vector<string> chessboard(n, string(n, '.'));//初始化棋盘
+        backtracking(n,0, chessboard);
+        return result;
+    }
+};
+
+
