@@ -1,0 +1,144 @@
+/*
+更好的做法：回溯法 (Backtracking) —— "切蛋糕"思维
+我们可以把这道题想象成切蛋糕。你拿着一把刀，站在字符串的起点：
+
+第一刀切在哪？
+
+你可以切 1 个字符、2 个字符……直到整个字符串。
+
+限制条件： 你切下来的这块蛋糕（子串），必须是回文串。如果是，你才能切这一刀；如果不是，这刀就不能切，试试切长一点。
+
+剩下的蛋糕怎么办？
+
+把剩下的部分当作一个新的字符串，递归去切。
+
+什么时候结束？
+
+当你切到了字符串的末尾（startIndex >= s.size()），说明切完了，而且切下来的每一块都是回文的。这时候就把这一组切分方案记录下来。
+
+
+*/
+
+
+//AI的代码
+class Solution {
+public:
+    vector<vector<string>> result;
+    vector<string> path;
+
+    // 辅助函数：判断是否是回文串
+    bool isPalindrome(const string& s, int start, int end) {
+        while (start < end) {
+            if (s[start] != s[end]) {
+                return false;
+            }
+            start++;
+            end--;
+        }
+        return true;
+    }
+
+    // startIndex: 这把刀现在放在哪里（切割线的起始位置）
+    void backtracking(const string& s, int startIndex) {
+        // 1. 结束条件：切割线到了字符串末尾
+        if (startIndex >= s.size()) {
+            result.push_back(path);
+            return;
+        }
+
+        // 2. 遍历切割位置
+        // i 代表这一刀切到哪里结束
+        for (int i = startIndex; i < s.size(); i++) {
+            
+            // 【核心剪枝】：只有当前切下来的子串是回文，才继续往下走
+            // 子串范围是 [startIndex, i]
+            if (isPalindrome(s, startIndex, i)) {
+                
+                // 获取子串 (从 startIndex 开始，长度是 i - startIndex + 1)
+                string str = s.substr(startIndex, i - startIndex + 1);
+                path.push_back(str);
+
+                // 递归：刀移动到 i + 1 的位置，去切剩下的部分
+                backtracking(s, i + 1);
+
+                // 回溯：把刚才切的那块拿回来，准备试下一种切法
+                path.pop_back();
+            }
+            // 如果不是回文，就跳过，试试切更长一点
+        }
+    }
+
+    vector<vector<string>> partition(string s) {
+        result.clear();
+        path.clear();
+        backtracking(s, 0);
+        return result;
+    }
+};
+
+
+
+//我的代码
+class Solution {
+public:
+
+    vector<vector<string>> result;
+
+    vector<string> path;
+
+    bool ishuiwen(string& s,int startIndex,int endIndex)
+    {
+        while (startIndex < endIndex)
+        {
+            if (s[endIndex] == s[startIndex])
+            {
+                startIndex++;
+                endIndex--;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+        return true;
+    }
+
+
+    void backtracking(string& s,int startIndex)
+    {
+        if (startIndex >= s.size()) {
+            result.push_back(path);
+            return;
+        } 
+        
+        for (int i = startIndex; i < s.size(); i++)
+        {
+            if (ishuiwen(s,startIndex, i)) //判断  startIndex到 i所代表的字符串是不是回文   如果是，再分割其他的
+            {
+
+                path.push_back(s.substr(startIndex, i - startIndex + 1));
+
+                backtracking(s,i+1);
+
+                path.pop_back();
+            
+            }
+
+        }
+    
+    }
+
+    vector<vector<string>> partition(string s) {
+        result.clear();
+        path.clear();
+
+        backtracking(s,0);
+        return result;
+
+    }
+};
+
+
+//易错点
+1.while (startIndex < endIndex)    写错了，写成了startIndex > endIndex的
