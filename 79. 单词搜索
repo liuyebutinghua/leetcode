@@ -1,0 +1,170 @@
+/*
+它的逻辑和走迷宫非常像：你站在网格的一个格子上，手里拿着要找的单词清单。如果脚下的字母对了，你就往上下左右试探，看看能不能连成一个完整的单词。
+
+1. 核心思路：地毯式搜索 + 试探
+我们要解决两个问题：
+
+起点在哪里？ 单词可能从地图的任何一个角落开始。
+
+路线怎么走？ 必须顺着单词的字母顺序走，且不能走回头路。
+
+算法步骤：
+
+双重循环找起点： 遍历整个二维网格 board。只要发现某个格子 board[i][j] 等于单词的第一个字母 word[0]，就从这个位置启动 DFS。
+
+DFS 递归（试探）：
+
+参数：当前坐标 (i, j)，当前我们要找单词中的第几个字母 k。
+
+成功条件：如果 k 已经等于单词长度了，说明全找齐了，返回 true。
+
+失败条件（剪枝）：
+
+越界了（出了网格）。
+
+字母对不上（board[i][j] != word[k]）。
+
+这个格子刚才已经走过了（避免兜圈子）。
+
+标记与回溯（关键）：
+
+标记：为了防止“同一个单元格被重复使用”，当我们走进一个格子时，要把它标记为“已访问”。
+
+小技巧：不需要开额外的 visited 数组，直接把 board[i][j] 改成一个特殊字符（比如 '#' 或 '\0'）即可。
+
+递归：向上下左右四个方向递归查找下一个字母 k+1。
+
+回溯（还原）：如果四个方向都走不通，说明这条路是死胡同。在退回去之前，必须把刚才改成的特殊字符还原回原来的字母。因为对于别的路径来说，这个格子可能还有用。
+
+*/
+
+
+
+//AI的代码
+class Solution {
+public:
+    int rows, cols;
+
+    // k 表示当前正在匹配 word 的第 k 个字符
+    bool dfs(vector<vector<char>>& board, string& word, int i, int j, int k) {
+        // 1. 终止条件：如果我们已经匹配到了单词的最后一个字符之后
+        if (k == word.size()) {
+            return true;
+        }
+
+        // 2. 剪枝条件：
+        // - 越界
+        // - 字符不匹配
+        if (i < 0 || i >= rows || j < 0 || j >= cols || board[i][j] != word[k]) {
+            return false;
+        }
+
+        // 3. 标记当前格子已访问
+        // 先把当前字符存起来，为了后面回溯还原
+        char temp = board[i][j]; 
+        board[i][j] = '\0'; // 标记为特殊字符，表示“我在这条路径上已经用过它了”
+
+        // 4. 向四个方向探索 (上下左右)
+        // 只要有一个方向能走通(return true)，那整条路就通了
+        bool res = dfs(board, word, i + 1, j, k + 1) || 
+                   dfs(board, word, i - 1, j, k + 1) ||
+                   dfs(board, word, i, j + 1, k + 1) ||
+                   dfs(board, word, i, j - 1, k + 1);
+
+        // 5. 回溯：还原现场
+        // 无论刚才那条路通不通，我要退回去了，得把字符改回来
+        board[i][j] = temp;
+
+        return res;
+    }
+
+    bool exist(vector<vector<char>>& board, string word) {
+        rows = board.size();
+        cols = board[0].size();
+
+        // 遍历每一个格子作为起点
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                // 只有首字母匹配，才开始 DFS
+                if (board[i][j] == word[0]) {
+                    if (dfs(board, word, i, j, 0)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+};
+
+
+
+
+//我的代码
+class Solution {
+public:
+
+    int rows,cols;
+    
+
+    bool dfs(vector<vector<char>>& board, string& word,int i,int j ,int k)   //i、j表示在board的   k 表示在word元素的第k个元素
+    {
+        if (k == word.size()) return true;
+
+        if (i < 0 || i >= rows || j < 0 || j >= cols || board[i][j] != word[k]) return false;
+ 
+        char temp = board[i][j];
+
+        board[i][j] = '#';
+
+        bool res = dfs(board, word, i + 1, j, k + 1) || dfs(board, word, i - 1, j, k + 1) || dfs(board, word, i, j + 1, k + 1) || dfs(board, word, i, j - 1, k + 1);
+
+        board[i][j] = temp;
+
+        return res;
+    }
+
+
+
+    bool exist(vector<vector<char>>& board, string word) {
+         
+        rows = board.size();
+        cols = board[0].size();
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                if (board[i][j] == word[0])
+                {
+                    if (dfs(board, word, i, j, 0))
+                    {
+                        return true;;
+                    }
+                    
+                }
+
+
+            }
+
+        }
+        return false;
+
+
+    }
+};
+
+//我的问题 
+1.       
+用return dfs(board, word, i, j, 0);代替下面的代码 
+if (dfs(board, word, i, j, 0))
+{
+    return true;;
+}
+
+忽略了多个word[0]的可能性
+
+2.
+bool dfs(vector<vector<char>>& board, string word,int i,int j ,int k)    的定义不好
+ string word  应该为  string& word   这样可以减小内存的使用
+
