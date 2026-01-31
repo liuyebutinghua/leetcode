@@ -1,0 +1,104 @@
+/*
+解题思路：
+虽然你的代码能过，但在面试中，面试官通常期待一个更优的解法：一次性二分查找。
+核心观察：题目有两个关键条件：每行非严格递增。每行的第一个整数大于前一行的最后一个整数。
+这意味着：如果你把这个二维矩阵“拉直”，它就是一个完全有序的一维数组！
+我们可以把矩阵看作一个长度为 $m \times n$ 的一维数组，直接在这个“虚拟”的一维数组上进行二分查找。
+虚拟下标 (index)：范围从 0 到 m * n - 1。坐标映射公式：row = index / colscol = index % cols
+即 matrix[index / cols][index % cols] 对应一维数组里的值。改进后的复杂度：
+时间复杂度：$O(\log(m \times n))$，即 $O(\log m + \log n)$。这比 $O(m + \log n)$ 更快，完全没有线性扫描的过程。
+*/
+
+/*
+我的代码和思路：
+你采用的策略是：“先定位行，再二分查找”。定位行：遍历每一行，
+通过检查该行的开头 (matrix[i][0]) 和结尾 (matrix[i][cols-1])，
+判断 target 是否可能在这一行内。二分查找：一旦锁定某一行，
+就对这一行进行标准的二分查找。优点：逻辑清晰，易于理解。
+边界检查 (if (target > ... || target < ...) ) 写得很好，
+能快速排除明显不存在的情况。二分查找的写法标准，没有死循环风险。
+复杂度分析：时间复杂度：$O(m + \log n)$。其中 $m$ 是行数（最坏情况要遍历所有行）
+，$n$ 是列数（二分查找）。空间复杂度：$O(1)$。
+*/
+class Solution {
+public:
+
+    bool searchInsert(vector<vector<int>>& matrix, int target,int rows,int left,int right)
+    {
+
+        while (left <= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (matrix[rows][mid] < target)
+            {
+                left = mid + 1;
+            }
+            else if (matrix[rows][mid] > target)
+            {
+                right= mid-1;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        return false;
+    
+    }
+
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int rows = matrix.size();
+        int cols= matrix[0].size();
+        if (target > matrix[rows-1][cols-1] || target < matrix[0][0]) return false;
+
+        for (int i = 0; i < rows; i++)
+        {
+            if (matrix[i][0] <= target && matrix[i][cols - 1]>= target)
+            {
+                return searchInsert(matrix, target, i,0, cols-1);
+            }
+
+        }
+
+        return false;
+    }
+};
+
+
+
+//更加优秀的代码和思路
+
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int m = matrix.size();
+        int n = matrix[0].size();
+        
+        // 把二维矩阵当做一维数组来看
+        // 范围是 [0, m * n - 1]
+        int left = 0;
+        int right = m * n - 1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            
+            // 【核心】将一维 mid 映射回二维坐标
+            int row = mid / n;
+            int col = mid % n;
+            int val = matrix[row][col];
+
+            if (val == target) {
+                return true;
+            } else if (val < target) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return false;
+    }
+};
+
+
