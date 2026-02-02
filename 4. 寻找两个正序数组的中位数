@@ -1,0 +1,168 @@
+/*
+1. 核心思维：完美的“切割”中位数的本质是什么？中位数就是把所有数字分成“长度相等的两半”，
+且左半边的所有元素 $\le$ 右半边的所有元素。假设我们把数组 A 和数组 B 切成两部分：
+我们要找一条切线，使得：左边的元素个数 = 右边的元素个数（或者左边比右边多 1 个，针对奇数情况）。
+左边所有的数 $\le$ 右边所有的数。
+
+变量定义假设 nums1 切在位置 i，nums2 切在位置 j：
+nums1 左边部分是 nums1[0...i-1]，右边是 nums1[i...]nums2 
+左边部分是 nums2[0...j-1]，右边是 nums2[j...]这就形成了四个关键元素
+（交叉对比的关键）：L1: nums1[i-1] （数组1左半边最大的）R1: nums1[i] 
+（数组1右半边最小的）L2: nums2[j-1] （数组2左半边最大的）R2: nums2[j] 
+（数组2右半边最小的）完美切割的条件要满足中位数定义，
+必须满足交叉关系：L1 <= R2 （数组1的左边 $\le$ 数组2的右边）L2 <= R1 
+（数组2的左边 $\le$ 数组1的右边）只要找到满足这两个条件的 i，我们就成功了！
+
+2. 二分查找的逻辑我们不需要同时搜索 i 和 j。
+因为总长度 total = m + n 是固定的，左半边需要的个数 leftTotal = (m + n + 1) / 2 也是固定的。
+只要确定了 i（nums1 提供几个元素），j 就自动确定了：$$j = leftTotal - i$$所以，
+我们只需要在 较短的那个数组 上进行二分查找 i 即可。算法流程：始终保证 nums1 是短数组：
+如果 nums1 比 nums2 长，交换它们。这样可以缩小二分搜索的范围，且避免 j 越界。
+二分搜索 i (范围 [0, m])：计算 j = (m + n + 1) / 2 - i获取四个关键值 L1, R1, L2, R2。
+注意边界：如果 i=0，L1设为负无穷；如果 i=m，R1设为正无穷。判断交叉条件：
+情况 A (完美)：L1 <= R2 且 L2 <= R1。找到答案了！如果总数是奇数：
+中位数是 max(L1, L2)。如果总数是偶数：中位数是 (max(L1, L2) + min(R1, R2)) / 2.0。
+
+  情况B：L1 > R2 （i 选大了 / 切太右了）
+现象：nums1 左边最大的数 (L1) 竟然比 nums2 右边最小的数 (R2) 还要大。
+
+原因：说明 nums1 左边拿了太多大数，或者说 i 太靠右了。
+
+策略：我们需要把 i 往左移，减少 nums1 左边的元素。
+
+代码：right = i - 1;
+
+情况 C：L2 > R1 （i 选小了 / 切太左了）
+现象：nums2 左边最大的数 (L2) 比 nums1 右边最小的数 (R1) 还要大。
+
+原因：说明 nums1 右边保留了太多小的数（应该划给左边），或者说 nums1 左边拿得太少，导致 nums2 被迫拿了太多大数。即 i 太靠左了。
+
+策略：我们需要把 i 往右移，增加 nums1 左边的元素。
+
+代码：left = i + 1;
+
+*/
+
+
+
+//AI的代码：
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        // 1. 保证 nums1 是较短的数组，优化二分速度，防止 j 越界
+        if (nums1.size() > nums2.size()) {
+            return findMedianSortedArrays(nums2, nums1);
+        }
+
+        int m = nums1.size();
+        int n = nums2.size();
+
+        // 分割线左边需要的元素总个数
+        // (m + n + 1) / 2 这种写法技巧：
+        // 如果总数是 11，左边要 6 个；如果总数是 10，左边要 5 个。
+        int totalLeft = (m + n + 1) / 2;
+
+        // 在 nums1 上进行二分查找，找分割线 i
+        int left = 0;
+        int right = m;
+
+        while (left <= right) {
+            // i 是 nums1 的分割线（表示 nums1 左边有 i 个元素）
+            int i = left + (right - left) / 2;
+            // j 是 nums2 的分割线
+            int j = totalLeft - i;
+
+            // 处理边界值：如果分割线在最左边，左边就是负无穷；在最右边，右边就是正无穷
+            int nums1LeftMax = (i == 0) ? INT_MIN : nums1[i - 1];
+            int nums1RightMin = (i == m) ? INT_MAX : nums1[i];
+
+            int nums2LeftMax = (j == 0) ? INT_MIN : nums2[j - 1];
+            int nums2RightMin = (j == n) ? INT_MAX : nums2[j];
+
+            // 交叉判断
+            if (nums1LeftMax <= nums2RightMin && nums2LeftMax <= nums1RightMin) {
+                // 【找到完美分割！】
+
+                // 如果总长度是奇数，中位数就是左半边的最大值
+                if ((m + n) % 2 == 1) {
+                    return max(nums1LeftMax, nums2LeftMax);
+                }
+                // 如果总长度是偶数，中位数是 (左半边最大 + 右半边最小) / 2
+                else {
+                    return (max(nums1LeftMax, nums2LeftMax) + min(nums1RightMin, nums2RightMin)) / 2.0;
+                }
+            }
+            else if (nums1LeftMax > nums2RightMin) {
+                // nums1 左边太大了，说明切分线 i 划得太靠右了，要往左移
+                right = i - 1;
+            }
+            else {
+                // nums2LeftMax > nums1RightMin
+                // nums2 左边太大了（意味着 nums1 左边太小了），i 要往右移
+                left = i + 1;
+            }
+        }
+
+        return 0.0;
+    }
+};
+
+
+
+//我的代码
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+
+        if (nums1.size() > nums2.size())
+        {
+            return findMedianSortedArrays(nums2, nums1);
+        }
+
+        int m = nums1.size();
+        int n = nums2.size();
+
+        int totalleft = (m + n + 1) / 2;
+
+        int left = 0;
+        int right = m ;
+
+        while (left <= right)
+        {
+            int i = left + (right - left) / 2;//i的数量也代表着  左半区数字的数量
+            int j = totalleft - i;
+
+            int nums1leftmax = (i == 0) ? INT_MIN : nums1[i-1];
+            int nums1rightmin = (i == m) ? INT_MAX : nums1[i];
+
+            int nums2leftmax = (j == 0) ? INT_MIN : nums2[j - 1];
+            int nums2rightmin = (j == n) ? INT_MAX : nums2[j];
+
+            if (nums1leftmax <= nums2rightmin && nums2leftmax <= nums1rightmin)//满足条件
+            {
+                if ((m + n) % 2 == 0)//偶数
+                {
+                    return (max(nums1leftmax, nums2leftmax) + min(nums1rightmin , nums2rightmin)) / 2.0;
+                }
+                else//奇数
+                {
+                    return max(nums1leftmax, nums2leftmax);
+                }
+
+
+            }
+            else if (nums1leftmax > nums2rightmin)
+            {
+                right= i-1;
+            }
+            else
+            {
+                left = i + 1;
+            }
+
+        }
+
+        return 0.0;
+    }
+};
+
