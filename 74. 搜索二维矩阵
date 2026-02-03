@@ -102,3 +102,43 @@ public:
 };
 
 
+//第二遍做
+
+class Solution {
+public:
+
+
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int rows = matrix.size();
+        int cols= matrix[0].size();
+
+        int left = 0;
+        int right = rows * cols - 1;
+
+        while (left<= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            int mid_x = mid / cols;
+            int mid_y = mid % cols;
+
+            if (matrix[mid_x][mid_y] < target)
+            {
+                left = mid + 1;
+            }
+            else if (matrix[mid_x][mid_y] > target)
+            {
+                right = mid - 1;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+//要点：
+1.int right = rows * cols - 1;  已经把个数转换成了索引的序号，不需要在int mid_y = mid % cols;  后面再-1
+2.int mid_x = mid / cols; int mid_y = mid % cols;   除的都是cols（列），而不是行   。是计算在列中的位置
+
