@@ -169,4 +169,56 @@ public:
     
 };
 
+//第二次做
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+
+
+        while (left<= right)
+        {
+            int mid = left + (right-left)/2;
+
+            if (nums[mid] == target)
+            {
+                return mid;
+            }
+            else if (nums[mid] >= nums[left])//左边有序          易错点：区间判断错误   且忽略nums[mid] >= nums[left]   的=号  忽略了mid=left的条件
+            {
+                if (nums[mid] > target&& target>=nums[left])
+                {
+                    right = mid - 1;
+                }
+                else
+                {
+                    left = mid + 1;
+                }
+
+
+            }
+            else//右边有序
+            {
+                if (nums[mid] < target && target <= nums[right])
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid - 1;
+                }
+            }
+
+        }
+
+
+        return -1;
+    }
+
+};
+
+
+
+
 
