@@ -25,3 +25,82 @@ public:
 
     }
 };
+
+
+//第二次做    
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+        int left = 0;
+        int right=nums.size()-1;
+
+        while (left<= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] < nums[right])//左边有序
+            {
+                right = mid ;
+            }
+            else 
+            {
+                left = mid + 1;
+            }
+
+
+        }
+
+        return nums[right];
+    }
+};
+
+/*
+易错点：  必须和nums[right] 进行对比   不然会出现问题
+❌ 错误分析：为什么不能跟 left 比？
+我们来跑一个最简单的测试用例：nums = [1, 2, 3] （最小元素是 1）。
+
+left = 0, right = 2。
+
+mid = 1 (也就是元素 2)。
+
+你的判断：if (nums[mid] >= nums[left])
+
+2 >= 1，条件成立，认为是“左边有序”。
+
+你的操作：left = mid + 1 -> left 变成了 2。
+
+后果：你直接跳过了 1 和 2，最后返回了 3。答案错误！
+
+根本原因：
+
+当 nums[mid] > nums[left] 时，情况是不确定的：
+
+情况 A（正常升序）：[1, 2, 3] -> 最小值在左边。
+
+情况 B（旋转过）：[3, 4, 5, 1, 2] -> 最小值在右边。
+
+你看，同样的条件 mid > left，最小值可能在左，也可能在右。所以用 left 做参照物是无法判断方向的。
+
+✅ 正确思路：一定要跟 right 比
+在寻找旋转数组最小值时，right 是唯一的真理。
+
+请看图解逻辑：
+
+如果 nums[mid] < nums[right]：
+
+说明从 mid 到 right 这段是平滑上升的（有序）。
+
+最小值肯定不是 mid 右边的数。
+
+最小值可能是 mid 自己，也可能在 mid 左边。
+
+策略： right = mid （注意： 不能减 1，因为 mid 可能是最小值）。
+
+如果 nums[mid] > nums[right]：
+
+说明 mid 位置很高，是一个“悬崖”的边缘。
+
+断崖（最小值）肯定在 mid 的右边。
+
+策略： left = mid + 1。
+*/
