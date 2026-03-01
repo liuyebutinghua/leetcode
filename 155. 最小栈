@@ -1,0 +1,170 @@
+/*
+思路1：辅助栈
+ 核心思维：“影子栈”（双栈法）
+既然一个栈记不住历史的最小值，那我们就用两个栈！
+
+dataStack（主栈）：老老实实存放所有的数据。
+
+minStack（辅助栈/影子栈）：专门用来存放 dataStack 在每一个对应高度时的最小值。
+
+
+思路2：
+. 核心思维：栈里不存真实值，存“差值”
+我们只用一个栈 st 和一个变量 min_val（记录当前的最小值）。
+
+关键魔法在于：栈里面每次存的，不是刚进来的数字，而是 新数字 - 当前最小值 的差值！
+
+如果差值是正数或 0：说明新来的数字比较大，没有打破最小值的记录。
+
+如果差值是负数：说明新来的数字比当前最小值还要小！这个负数就是一个**“暗号”**，告诉我们：在这里，最小值发生了改变！
+
+2. 具体怎么操作？（魔法拆解）
+假设我们依次压入 5, 2, 3。
+
+第一步：Push 5
+
+栈是空的。我们把 5 设为 min_val。
+
+栈里压入差值：5 - 5 = 0。
+
+状态：st = [0], min_val = 5
+
+第二步：Push 2
+
+算差值：新值 2 - 当前 min_val 5 = -3。
+
+栈里压入 -3。
+
+因为差值是负数，说明来了个更小的！我们把 min_val 更新为 2。
+
+状态：st = [0, -3], min_val = 2
+
+第三步：Push 3
+
+算差值：新值 3 - 当前 min_val 2 = 1。
+
+栈里压入 1。
+
+差值是正数，min_val 保持 2 不变。
+
+状态：st = [0, -3, 1], min_val = 2
+
+见证奇迹的时刻来了：我们要获取 Top 和 Pop 了！
+
+执行 top()：
+
+看一眼栈顶是 1（正数）。说明真实的数字比最小值大。
+
+真实数字 = min_val + 差值 = 2 + 1 = 3。完美还原！
+
+执行 pop() 弹出 3：
+
+弹出了 1（正数），说明刚才弹出的不是最小值，min_val 不需要改变。
+
+状态：st = [0, -3], min_val = 2
+
+再次执行 top()：
+
+看一眼栈顶是 -3（负数）。遇到负数暗号！ 说明当初压入这个位置的就是真实的最小值。
+
+直接返回 min_val，也就是 2。完美还原！
+
+执行 pop() 弹出 2（最神奇的一步：时光倒流）：
+
+弹出了 -3（负数）。这意味着我们把当前的最小值弹走了，必须恢复上一代的最小值。
+
+怎么恢复？上一代最小值 = 当前 min_val - 弹出的负数差值 = 2 - (-3) = 5！
+
+min_val 成功恢复成了 5！
+
+*/
+
+
+//我的代码  思路1
+class MinStack {
+public:
+    stack<int> datastack;
+    stack<int> minstack;
+
+
+    MinStack() {
+        minstack.push(INT_MAX);
+    }
+
+    void push(int val) {
+        datastack.push(val);
+        minstack.push(min(val, minstack.top()));
+    }
+
+    void pop() {
+        datastack.pop();
+        minstack.pop();
+    }
+
+    int top() {
+        return datastack.top();
+    }
+
+    int getMin() {
+        return minstack.top();
+    }
+};
+
+
+//ai的思路2的代码   重点
+#include <stack>
+using namespace std;
+
+class MinStack {
+private:
+    // 必须用 long long 防止差值溢出
+    stack<long long> st;
+    long long min_val;
+
+public:
+    MinStack() {
+        // 初始化
+    }
+    
+    void push(int val) {
+        if (st.empty()) {
+            st.push(0); // 第一个元素的差值总是 0
+            min_val = val;
+        } else {
+            // 计算差值并入栈
+            long long diff = (long long)val - min_val;
+            st.push(diff);
+            
+            // 如果差值小于 0，说明来了个更小的值，更新 min_val
+            if (diff < 0) {
+                min_val = val;
+            }
+        }
+    }
+    
+    void pop() {
+        long long diff = st.top();
+        st.pop();
+        
+        // 如果弹出的差值小于 0，说明当前弹出的就是最小值
+        // 既然最小值被弹走了，我们就需要恢复上一个最小值
+        if (diff < 0) {
+            min_val = min_val - diff; // 负负得正，实际上是加回了原来的差值
+        }
+    }
+    
+    int top() {
+        long long diff = st.top();
+        // 如果差值小于 0，说明当时压入的值就是当前的 min_val
+        if (diff < 0) {
+            return min_val;
+        } else {
+            // 否则，真实值 = 当前最小值 + 差值
+            return min_val + diff;
+        }
+    }
+    
+    int getMin() {
+        return min_val;
+    }
+};
