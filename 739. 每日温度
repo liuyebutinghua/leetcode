@@ -1,0 +1,88 @@
+/*
+Gemini 说
+这道题（LeetCode 739. 每日温度）是栈的进阶应用，也是面试中出现频率极高的神仙题。它引出了一个极其重要的数据结构：单调栈（Monotonic Stack）。
+
+如果你用两层 for 循环暴力去匹配（每天都往后找比它高的），时间复杂度是 O(N 
+2
+ )，在数据量大的时候肯定会超时。
+
+用单调栈，我们可以把时间复杂度降到惊人的 O(N)！
+
+核心思维：维护一个“等待升温的队伍”
+想象一下，这个栈就是一个**“等待升温的队伍”**。
+
+每天我们都会把当天的**日子（索引）**加入这个队伍。
+
+但是在加入之前，我们要看看今天气温高不高。
+
+如果今天气温高于队伍最后面（栈顶）的那个人，那么那个人终于等到了升温的日子！他就可以离开队伍了，并且计算出他等了多少天。
+
+把队伍尾部所有比今天温度低的人都“踢出”队伍后，今天的人再排进队伍的最后。
+
+因为我们总是把温度低的人踢出去，所以留在队伍（栈）里的人，他们的温度一定是从底向上递减的（单调递减）。这就是“单调栈”名字的由来。
+
+
+*/
+
+
+//ai的代码
+class Solution {
+public:
+    vector<int> dailyTemperatures(vector<int>& temperatures) {
+        int n = temperatures.size();
+        // 初始化答案数组，默认全为 0。
+        // 这样最后留在栈里没有匹配到的天数，自然也就是 0 了。
+        vector<int> answer(n, 0); 
+        
+        // 单调栈，专门存放还没有找到更高温度的天的【下标】
+        stack<int> st;
+
+        for (int i = 0; i < n; i++) {
+            // 当栈不为空，且当前天的温度 > 栈顶那天的温度时
+            // 说明栈顶的那天终于找到比它热的一天了！
+            while (!st.empty() && temperatures[i] > temperatures[st.top()]) {
+                // 取出栈顶那一天的下标
+                int prevIndex = st.top();
+                st.pop();
+                
+                // 计算等了几天（当前下标 - 栈顶下标），填入答案
+                answer[prevIndex] = i - prevIndex;
+            }
+            
+            // 当前这天处理完毕，乖乖进栈等待后面的高温
+            st.push(i);
+        }
+
+        return answer;
+    }
+};
+
+
+//我的代码
+class Solution {
+public:
+    vector<int> dailyTemperatures(vector<int>& temperatures) {
+        int n = temperatures.size();
+
+        vector<int> answer(n,0);
+
+        stack<int> st;
+
+        for (int i = 0; i < n; i++)
+        {
+            while (!st.empty() && temperatures[i] > temperatures[st.top()])
+            {
+                int num = st.top();
+                st.pop();
+
+                answer[num] = i - num;
+
+            }
+
+            st.push(i);
+        }
+
+        return answer;
+
+    }
+};
