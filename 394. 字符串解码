@@ -1,0 +1,202 @@
+/*
+1.使用双栈法
+双栈法（数字栈 + 字符串栈）
+在遍历字符串时，我们会遇到四种字符：
+数字 (0-9)：表示重复次数 $k$。注意，数字可能是多位数（比如 100[a]），所以要累加计算。
+字母 (a-z)：表示需要被重复的字符串内容。
+左括号 [：这是一个**“存档”**信号！意味着我们要进入更深一层的嵌套了。我们需要把当前正在拼凑的字符串和刚算出来的倍数保存（压栈）起来，然后清空变量，去处理括号里面的新内容。
+右括号 ]：这是一个**“读档并结算”**信号！意味着当前深度的内容拼完了。我们要从栈里拿出之前存的倍数 $k$ 和外层字符串，把刚才拼好的结果放大 $k$ 倍，再拼接到外层字符串后面。
+准备两个变量和两个栈：current_num：记录当前遇到的数字（倍数）。current_str：记录当前层级正在拼凑的字符串。numStack：用来“存档”倍数。strStack：用来“存档”外层的字符串。
+
+2.递归法
+我们定义一个递归函数 decode(string& s, int& i)：
+
+遇到数字：算出完整的倍数 num。
+
+遇到字母：直接拼接到当前层的字符串 res 中。
+
+遇到 [（下潜）：
+
+意味着要开启一个子串的解析。
+
+把索引 i 往后挪一位（跳过 [），然后调用递归自身，去解析括号里的内容。
+
+递归返回后，把返回的子串放大 num 倍，拼到 res 后面。
+
+拼完后，跳过当前的 ]。
+
+遇到 ]（上浮）：
+
+意味着当前层级的子串解析完毕了。
+
+直接 return res;，把拼好的串交给上一层！
+
+
+*/
+
+
+//双栈法  ai的代码
+class Solution {
+public:
+    string decodeString(string s) {
+        stack<int> numStack;     // 存储倍数的栈
+        stack<string> strStack;  // 存储外层字符串的栈
+        
+        string current_str = ""; // 当前层级正在拼凑的字符串
+        int current_num = 0;     // 当前遇到的倍数
+        
+        for (char c : s) {
+            if (isdigit(c)) {
+                // 处理多位数，比如 "12" = 1 * 10 + 2
+                current_num = current_num * 10 + (c - '0');
+            } 
+            else if (isalpha(c)) {
+                // 遇到字母，直接追加到当前字符串后面
+                current_str += c;
+            } 
+            else if (c == '[') {
+                // 遇到 '['，存档并进入下一层
+                numStack.push(current_num);
+                strStack.push(current_str);
+                // 状态清零，准备迎接括号里的新世界
+                current_num = 0;
+                current_str = "";
+            } 
+            else if (c == ']') {
+                // 遇到 ']'，读档并结算当前层
+                int k = numStack.top(); 
+                numStack.pop();
+                
+                string prev_str = strStack.top(); 
+                strStack.pop();
+                
+                // 将当前层级的字符串重复 k 次
+                string temp = "";
+                for (int i = 0; i < k; i++) {
+                    temp += current_str;
+                }
+                
+                // 把放大后的串拼接到外层（上一层）字符串的后面
+                // 拼接后，它就成了新一轮的 current_str
+                current_str = prev_str + temp;
+            }
+        }
+        
+        return current_str;
+    }
+};
+
+//双栈法  我的代码
+class Solution {
+public:
+    string decodeString(string s) {
+        stack<int> numstack;
+        stack<string> stringstack;
+
+
+        string currentstring = "";
+        int currentnum = 0;
+
+        for (auto c : s)
+        {
+            if (isdigit(c))
+            {
+                currentnum = currentnum * 10 + c - '0';
+            }
+            else if (isalpha(c))
+            {
+                currentstring += c;
+            }
+            else if (c == '[')
+            {
+                numstack.push(currentnum);
+                stringstack.push(currentstring);
+                currentnum = 0;
+                currentstring = "";
+            }
+            else if(c == ']')
+            {
+                int k = numstack.top();
+                numstack.pop();
+
+                string prestring = stringstack.top();
+                stringstack.pop();
+
+                string temp = "";
+                for (int i = 0; i < k; i++)
+                {
+                    temp += currentstring;
+                }
+
+                currentstring = prestring + temp;
+
+
+            }
+
+
+        }
+        return currentstring;
+
+    }
+};
+
+//递归法  ai的代码
+class Solution {
+public:
+    // 辅助递归函数
+    // 注意：这里的 int& i 是传引用！这是整个算法的灵魂。
+    string decode(const string& s, int& i) {
+        string res = "";
+        int num = 0;
+        
+        while (i < s.size()) {
+            char c = s[i];
+            
+            if (isdigit(c)) {
+                // 处理多位数字
+                num = num * 10 + (c - '0');
+                i++;
+            } 
+            else if (isalpha(c)) {
+                // 处理字母
+                res += c;
+                i++;
+            } 
+            else if (c == '[') {
+                // 遇到 '['，开启子世界
+                i++; // 跳过 '['
+                
+                // 魔法发生的地方：递归调用，去要括号里的解析结果
+                string subStr = decode(s, i);
+                
+                // 拿到子世界的结果后，放大 num 倍拼接到当前世界
+                while (num > 0) {
+                    res += subStr;
+                    num--;
+                }
+                
+                // 注意：由于内部的 decode 遇到 ']' 就会 return，
+                // 所以当递归返回时，当前的 i 正好指在 ']' 上。
+                // 我们需要把它跳过，继续解析外层后面的字符。
+                i++; 
+            } 
+            else if (c == ']') {
+                // 遇到 ']'，当前世界解析结束，带着成果返回给上一层
+                return res; 
+            }
+        }
+        
+        return res;
+    }
+
+    string decodeString(string s) {
+        int i = 0; // 全局进度条，从 0 开始
+        return decode(s, i);
+    }
+};
+
+
+
+
+
+
