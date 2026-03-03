@@ -1,0 +1,188 @@
+/*
+1. 核心思维：快速选择（Quickselect）你肯定学过“快速排序（Quicksort）”。
+快排的核心是：随便找一个基准数（Pivot），把比它小的扔到左边，比它大的扔到右边。
+然后对左右两边分别继续排序。快速选择是快排的“变体”，
+它极其聪明：因为我们只需要找“第 $k$ 大”的元素，所以每次划分完之后，
+我们只需要看目标位置在哪一半，然后直接舍弃掉另一半！第 $k$ 大的元素，
+在升序数组中，它的下标其实是 n - k。如果我们划分后，基准数的位置正好是 n - k，
+那我们直接找到了，直接返回！如果基准数的位置大于 n - k，说明目标在左半边，
+右半边全部不要了。如果基准数的位置小于 n - k，说明目标在右半边，左半边全部不要了。
+每次舍弃一半，时间复杂度就从快排的 $O(n \log n)$ 降到了惊人的 $O(n)$。
+
+2. 应对 LeetCode 的“变态”测试用例（三路划分）普通的快速选择算法逻辑上没问题，
+但 LeetCode 最近加入了大量**“全是重复元素”**的极端测试用例（比如 [2, 2, 2, 2, 2, ...]）。
+普通的划分方法遇到这种数组会退化成 $O(n^2)$，导致超时（TLE）。
+破局技巧：三路划分（Dutch National Flag 逻辑）我们不要只分两半，
+我们把数组分成三部分：严格小于 Pivot 的部分等于 Pivot 的部分严格大于 Pivot 的部分这样一来，
+如果数组里有大量重复元素，它们会被一次性塞进中间的“等于”部分。如果目标下标刚好落在“等于”部分，
+瞬间就能返回结果，效率拉满！
+
+1. 明确目标：换算“座位号”（下标）数组 nums = [3, 2, 1, 5, 6, 4]，
+总长度 $n = 6$。题目要找第 $k = 2$ 大的元素。
+你想象一下，如果这个数组完全按从小到大排好序，
+它长这样：[1, 2, 3, 4, 5, 6]。第 1 大是 6，
+下标是 5。第 2 大是 5，它的下标是 4。
+公式：目标下标 target = n - k = 6 - 2 = 4。
+从现在开始，忘掉“第 2 大”这件事，
+我们的唯一任务就是：找出在排好序的完美世界里，
+到底是谁坐在了 下标 4 这个座位上！
+2. 手工推演：开始“选老大并站队”我们不全盘排序，我们采取“抽盲盒站队”的策略。
+初始状态：nums = [3, 2, 1, 5, 6, 4]，要在整个范围 [0, 5] 里找 target = 4。
+🟢 第一轮站队抽盲盒（选基准 Pivot）：假设我们随便抽到了最后一个数字 4 作为基准。
+开始划分：让所有比 4 小的站左边，比 4 大的站右边。遍历数组，3, 2, 1 都比 4 小，留左边。5, 6 都比 4 大，去右边。
+基准归位：经过交换，数组变成了类似这样：[3, 2, 1, 4, 6, 5]（右边 6 和 5 的顺序无所谓）。此时，基准数字 4 坐在了 下标 3 的座位上。
+【关键推理时刻】4 坐在了 下标 3。这就意味着，无论怎么排，4 永远是全数组第 4 小的数。但我们的目标座位号是 target = 4。
+下标 3 < 目标下标 4。说明我们要找的人，肯定比 4 大，它必然藏在 4 的右半边！霸气操作：左半边 [3, 2, 1, 4] 统统不要了！
+我们只去右半边找。🟢 第二轮站队新的搜索范围：只剩下右半边 [6, 5]，对应的下标范围是 [4, 5]。目标依然是 target = 4。
+抽盲盒：假设这次我们抽到了数字 5 作为基准。开始划分：在这半边里，比 5 小的站左边，比 5 大的站右边。6 比 5 大，站到右边。
+基准归位：数组变成了这样：[..., 5, 6]。此时，基准数字 5 坐在了 下标 4 的座位上！【见证奇迹的时刻】哎呀！基准数字
+5 落座的位置，刚好就是我们的目标座位 target = 4！游戏结束！不需要再排了，这个坐在 下标 4 上的 5，就是我们要找的答案。直接返回 5！
+
+*/
+
+
+//ai的代码
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        // 找第 k 大，等价于在升序数组中找下标为 n - k 的元素
+        int targetIndex = nums.size() - k;
+        return quickSelect(nums, 0, nums.size() - 1, targetIndex);
+    }
+
+private:
+    int quickSelect(vector<int>& nums, int left, int right, int target) {
+        if (left == right) return nums[left];
+
+        // 1. 随机选择基准元素 (Pivot)，防止极端有序数组退化
+        int pivotIndex = left + rand() % (right - left + 1);
+        int pivot = nums[pivotIndex];
+
+        // 2. 三路划分指针初始化
+        int l = left;  // [left, l-1] 存放小于 pivot 的元素
+        int r = right; // [r+1, right] 存放大于 pivot 的元素
+        int i = left;  // i 是当前遍历的指针
+
+        // 开始遍历划分
+        while (i <= r) {
+            if (nums[i] < pivot) {
+                swap(nums[i], nums[l]);
+                i++;
+                l++;
+            } else if (nums[i] > pivot) {
+                swap(nums[i], nums[r]);
+                r--; // 注意：交换过来的新元素还没被检查过，所以 i 不能加 1
+            } else {
+                i++; // 等于 pivot，直接跳过，归入中间区域
+            }
+        }
+        
+        // 划分结束后：
+        // [left, l - 1] 都是 < pivot 的
+        // [l, r] 都是 == pivot 的
+        // [r + 1, right] 都是 > pivot 的
+
+        // 3. 判断目标下标到底落在哪一个区间
+        if (target >= l && target <= r) {
+            // 命中了“等于”区间，直接返回！
+            return nums[target];
+        } else if (target < l) {
+            // 目标在左边的“小于”区间，递归去左边找
+            return quickSelect(nums, left, l - 1, target);
+        } else {
+            // 目标在右边的“大于”区间，递归去右边找
+            return quickSelect(nums, r + 1, right, target);
+        }
+    }
+};
+
+
+//我的代码
+class Solution {
+public:
+
+    int quicksearch(vector<int>& nums, int left,int right,int targetindex)//递归
+    {
+        if (left == right)
+        {
+            return nums[left];
+        }
+
+        int l = left, r = right;
+        int startindex = left;
+
+        int pivotIndex = left + rand() % (right - left + 1);
+        int pivot = nums[pivotIndex];
+
+        while (startindex <= r)//快速排序
+        {
+            if (nums[startindex] < pivot)
+            {
+                swap(nums[startindex], nums[l]);
+                startindex++;
+                l++;
+            }
+            else if (nums[startindex] > pivot)
+            {
+                swap(nums[startindex], nums[r]);
+                r--;
+            }
+            else
+            {
+                startindex++;
+            }
+        }
+
+
+        if (targetindex >= l && targetindex <= r)
+        {
+            return nums[targetindex];
+        }
+        else if (targetindex < l)
+        {
+            return quicksearch(nums, left, l-1,targetindex);
+        }
+        else
+        {
+            return quicksearch(nums, r+1, right, targetindex);
+        }
+
+
+    }
+
+    int findKthLargest(vector<int>& nums, int k) {
+        int targetindex = nums.size() - k;//目标索引
+        return quicksearch(nums,0, nums.size()-1, targetindex);
+    }
+};
+
+
+
+//第二种方案
+1. 核心思维：维护一个容量为 K 的“VIP 俱乐部”我们建立一个大小严格限制为 $k$ 的小顶堆（Min-Heap）。小顶堆的特点：最小的元素永远在最上面（堆顶）。逻辑：遍历数组，把元素依次扔进堆里。如果堆里的元素数量超过了 $k$ 个，我们就把堆顶（也就是当前堆里最小的那个元素）无情地踢出去。结果：遍历完整个数组后，堆里留下来的就是全数组最大的 $k$ 个元素。而此时的堆顶（这 $k$ 个元素里最小的那个），刚好就是全数组第 $k$ 大的元素！2. C++ 极简代码实现在 C++ 中，我们使用 priority_queue。注意，它默认是“大顶堆”，我们需要加点参数把它变成“小顶堆”。C++#include <vector>
+#include <queue>
+
+using namespace std;
+
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        // 定义一个小顶堆（Min-Heap）
+        // 参数1: 数据类型, 参数2: 底层容器, 参数3: 比较器（greater表示小顶堆）
+        priority_queue<int, vector<int>, greater<int>> minHeap;
+
+        for (int num : nums) {
+            minHeap.push(num); // 新元素进入“VIP 俱乐部”
+            
+            // 如果俱乐部人数超标了（大于 k）
+            if (minHeap.size() > k) {
+                // 把最弱的（最小的，也就是堆顶元素）踢出去
+                minHeap.pop(); 
+            }
+        }
+
+        // 遍历结束后，堆里剩下的就是最大的 k 个数
+        // 堆顶就是这 k 个数里最小的，即第 k 大的数
+        return minHeap.top();
+    }
+};
