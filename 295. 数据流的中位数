@@ -1,0 +1,200 @@
+/*
+解题思路：
+1. 核心思维：把数据从中间“劈开”求中位数的本质是什么？
+就是把一堆排好序的数字，从正中间劈成两半：
+左半边：存放较小的那一半数字。
+右半边：存放较大的那一半数字。
+中位数只和这两半的边界有关：左半边最大的那个数。
+右半边最小的那个数。
+
+
+你想到了什么数据结构？
+我们需要极快地拿到“左半边（较小值）的最大值”
+$\rightarrow$ 大顶堆 (Max-Heap)！
+我们需要极快地拿到“右半边（较大值）的最小值”
+$\rightarrow$ 小顶堆 (Min-Heap)！
+
+2. 游戏规则：双堆对决我们建两个堆：maxHeap（大顶堆）：存放较小的那一半数据。
+minHeap（小顶堆）：存放较大的那一半数据。为了保证中位数的正确性，我们必须严格遵守两项铁律：
+铁律一：大小关系maxHeap 里的所有数字，必须小于等于 minHeap 里的所有数字。
+铁律二：人数平衡两个堆的人数必须尽量一样多。如果总数是偶数：两边人数一模一样（maxHeap.size() == minHeap.size()）。
+如果总数是奇数：我们人为规定，让 maxHeap 多放一个人（maxHeap.size() == minHeap.size() + 1）。
+
+3. 如何优雅地添加数字 (addNum)？当你拿到了一个新数字 num，你应该把它放到哪个堆里呢？
+如果写一堆 if-else 去判断大小，代码会非常臃肿且容易出错。一个极其优雅的“过桥”技巧
+：无论新来的数字是多少，我们都走以下三步：先扔进大顶堆：无脑把 num 压入 maxHeap。
+大顶堆上交最大值：此时 maxHeap 可能混进了一个本该属于大数阵营的数。
+没关系，我们把 maxHeap 的堆顶（当前它里面最大的数）弹出来，压入 minHeap。
+这一步绝对保证了“铁律一”（左边全小于右边）。平衡人数：经过上面两步，minHeap 的人数可能会比 maxHeap 多，
+这破坏了“铁律二”（左边人数必须 $\ge$ 右边）。如果 minHeap.size() > maxHeap.size()，
+我们就把 minHeap 的堆顶弹出来，还给 maxHeap。
+
+
+
+
+
+方法2：
+“双堆法”（Two Heaps）求中位数的另一种经典写法。
+*/
+
+//ai的代码
+class MedianFinder {
+private:
+    // 大顶堆（默认），存较小的一半
+    priority_queue<int> maxHeap; 
+    
+    // 小顶堆（需要完整 3 个参数），存较大的一半
+    priority_queue<int, vector<int>, greater<int>> minHeap; 
+
+public:
+    MedianFinder() {
+        // 初始化为空
+    }
+    
+    void addNum(int num) {
+        // 1. 无脑压入大顶堆
+        maxHeap.push(num);
+        
+        // 2. 将大顶堆的最大值“过桥”给小顶堆
+        minHeap.push(maxHeap.top());
+        maxHeap.pop();
+        
+        // 3. 维护人数平衡：保证大顶堆的人数 >= 小顶堆的人数
+        if (minHeap.size() > maxHeap.size()) {
+            maxHeap.push(minHeap.top());
+            minHeap.pop();
+        }
+    }
+    
+    double findMedian() {
+        // 如果两个堆人数一样（总数为偶数），取两个堆顶的平均值
+        if (maxHeap.size() == minHeap.size()) {
+            return (maxHeap.top() + minHeap.top()) / 2.0;
+        } 
+        // 如果总数为奇数，大顶堆的人数多一个，直接返回大顶堆的堆顶
+        else {
+            return maxHeap.top();
+        }
+    }
+};
+
+//我的代码
+class MedianFinder {
+
+private:
+
+    priority_queue<int, vector<int>, greater<int>> minHeap;//用来存放大值
+    priority_queue<int> maxHeap;//用来存放小值
+
+public:
+    MedianFinder() {
+
+    }
+
+    void addNum(int num) {
+        maxHeap.push(num);
+
+
+        minHeap.push(maxHeap.top());
+        maxHeap.pop();
+
+
+        if (minHeap.size() > maxHeap.size())
+        {
+            maxHeap.push(minHeap.top());
+            minHeap.pop();
+        }
+
+    }
+
+    double findMedian() {
+        if (minHeap.size() == maxHeap.size())
+        {
+            return (minHeap.top() + maxHeap.top()) / 2.0;
+        }
+        else
+        {
+            return maxHeap.top();
+        }
+    }
+};
+
+
+//方法2的代码
+class MedianFinder {
+    priority_queue<int> firstHalf;
+    priority_queue<int, vector<int>, greater<int>> secondHalf;
+public:
+    MedianFinder() {
+        
+    }
+    
+    void addNum(int num) {
+        if(firstHalf.empty() || firstHalf.top() >= num) {
+            firstHalf.push(num);
+        }
+        else {
+            secondHalf.push(num);
+        }
+
+        if(firstHalf.size() > secondHalf.size() + 1) {
+            int tmp = firstHalf.top();
+            firstHalf.pop();
+            secondHalf.push(tmp);
+        }
+
+        if(secondHalf.size() > firstHalf.size() + 1) {
+            int tmp = secondHalf.top();
+            secondHalf.pop();
+            firstHalf.push(tmp);
+        }
+    }
+    
+    double findMedian() {
+        if((firstHalf.size() + secondHalf.size()) % 2) {
+            return firstHalf.size() > secondHalf.size()? firstHalf.top(): secondHalf.top();
+        }
+        else {
+            return (firstHalf.top() + secondHalf.top()) / 2.0;
+        }
+    }
+};
+
+
+/方法2的解析
+
+1. 明确两个堆的“人设”firstHalf（大顶堆）：它是**“较小数字阵营”**。它的堆顶是这个阵营里最大的数（即靠近中间的数）。secondHalf（小顶堆）：它是**“较大数字阵营”**。它的堆顶是这个阵营里最小的数（即靠近中间的数）。2. addNum 的核心逻辑：分阵营 + 削峰填谷当一个新数字 num 过来时，代码分两步走：第一步：你是小个子还是大个子？（分配阵营）C++if(firstHalf.empty() || firstHalf.top() >= num) {
+    firstHalf.push(num);
+}
+else {
+    secondHalf.push(num);
+}
+如果 firstHalf 是空的，或者新来的数字比“小个子阵营”里的最高个子（firstHalf.top()）还要矮/一样高 $\rightarrow$ 毫无疑问，你属于小个子阵营，去 firstHalf。否则（新数字比小个子阵营的最高个子还高） $\rightarrow$ 那你就是大个子，去 secondHalf。第二步：削峰填谷（维护两边人数平衡）阵营分好后，可能会出现一个问题：某一边的人数比另一边多太多了！由于我们要找中位数，两边的人数差绝对不能超过 1。C++// 如果第一半区人太多了（比第二半区多 2 个或以上）
+if(firstHalf.size() > secondHalf.size() + 1) {
+    int tmp = firstHalf.top(); // 把小个子阵营里最高的那个抽出来
+    firstHalf.pop();
+    secondHalf.push(tmp);      // 调剂给大个子阵营
+}
+// 反之，如果第二半区人太多了
+if(secondHalf.size() > firstHalf.size() + 1) {
+    int tmp = secondHalf.top(); // 把大个子阵营里最矮的那个抽出来
+    secondHalf.pop();
+    firstHalf.push(tmp);        // 调剂给小个子阵营
+}
+通过这两步“多退少补”，不管你怎么加数字，firstHalf 和 secondHalf 的人数差距永远被死死卡在 0 或者 1。3. findMedian 的核心逻辑：奇偶分发既然人数永远平衡（最多差 1 个），拿中位数就非常简单了。C++// (firstHalf.size() + secondHalf.size()) % 2 
+// 如果总数是奇数（结果为 1，进入 if 分支）
+if((firstHalf.size() + secondHalf.size()) % 2) {
+    // 谁的人数多，中位数就在谁的堆顶
+    return firstHalf.size() > secondHalf.size() ? firstHalf.top() : secondHalf.top();
+}
+// 如果总数是偶数（结果为 0，进入 else 分支）
+else {
+    // 两人人数一样多，中位数就是两边堆顶的平均值
+    return (firstHalf.top() + secondHalf.top()) / 2.0;
+}
+总结与对比这种写法和我之前教的“过桥法”有什么区别呢？过桥法：不管三七二十一，先压入大顶堆，再弹给小顶堆，最后判断要不要弹回来。代码行数少，不用写条件判断，但每次插入必定要操作 2~3 次堆。你的这段代码：先用 if 瞄一眼栈顶，决定去哪个堆（1 次入堆操作）。然后如果失衡了，再做调剂（失衡时增加 2 次操作，不失衡就不做）。
+/
+
+
+
+
