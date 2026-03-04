@@ -1,0 +1,151 @@
+/*
+解题思路：
+
+1.小顶堆（VIP 俱乐部重出江湖）    其实大顶堆也可以
+第一步：万物起源——统计频率
+无论用什么方法，第一步绝对是用一个**哈希表（Hash Map）**把每个数字出现的次数统计出来。
+例如：nums = [1,1,1,2,2,3], k = 2
+统计后哈希表长这样：
+
+数字 1 出现了 3 次
+
+数字 2 出现了 2 次
+
+数字 3 出现了 1 次
+
+我们完全可以复用上一题的“VIP 俱乐部”逻辑！
+
+俱乐部容量还是 k。
+
+但是这次，谁能留在俱乐部，看的是“出现频率”，而不是数字本身的大小。
+
+频率最低的人（小顶堆的堆顶）最容易被踢出去
+
+
+2.神仙操作——桶排序（Bucket Sort）
+时间复杂度：$O(N)$（面试官最想看到的极限操作）小顶堆已经很好了，
+但面试官可能会坏笑着问：“能不能在绝对的 $O(N)$ 时间内搞定？”
+这时候就要祭出桶排序了。它的核心思维极其逆天：既然数字的频率最
+高不可能超过数组的总长度 $N$，那我们干脆建 $N+1$ 个“水桶”！
+第 1 个水桶，专门装出现 1 次的数字。第 2 个水桶，专门装出现 
+2 次的数字。...第 $N$ 个水桶，专门装出现 $N$ 次的数字。[比如刚才的例子 nums = [1,1,1,2,2,3]，长度是 6]
+水桶 1：装了 [3]水桶 2：装了 [2]水桶 3：装了 [1]水桶 4, 5, 6：都是空的我们要找前 $K$ 个最高频的，
+直接**从后往前（从水桶 6 倒着往水桶 1）**遍历这些水桶，遇到数字就拿出来，凑够 $K$ 个就下班！根本不需要排序！
+
+*/
+
+
+//ai的桶排序的代码
+class Solution {
+public:
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        // 1. 统计频率
+        unordered_map<int, int> freqMap;
+        for (int num : nums) {
+            freqMap[num]++;
+        }
+
+        // 2. 准备水桶：最多出现 nums.size() 次，所以建一个大小为 n+1 的数组
+        // buckets[i] 里面装的是所有出现频率为 i 的数字集合
+        int n = nums.size();
+        vector<vector<int>> buckets(n + 1);
+
+        // 把数字倒进对应的水桶里
+        for (auto& pair : freqMap) {
+            int num = pair.first;
+            int freq = pair.second;
+            buckets[freq].push_back(num);
+        }
+
+        // 3. 从后往前（从最高频率往下）去水桶里捞人，凑够 k 个就跑
+        vector<int> result;
+        for (int i = n; i >= 0 && result.size() < k; i--) {
+            // 如果这个水桶里有数字
+            for (int num : buckets[i]) {
+                result.push_back(num);
+                // 一旦凑够了 k 个，立刻结束战斗
+                if (result.size() == k) {
+                    return result;
+                }
+            }
+        }
+
+        return result;
+    }
+};
+
+
+
+//ai的小顶堆的代码：
+class Solution {
+public:
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        // 1. 统计每个数字出现的频率
+        unordered_map<int, int> freqMap;
+        for (int num : nums) {
+            freqMap[num]++;
+        }
+
+        // 2. 定义小顶堆（VIP 俱乐部）
+        // 里面存的是 pair<频率, 数字>。C++ 的 pair 默认按照第一个元素（频率）比较大小
+        // greater 保证了这是一个小顶堆（频率最小的在堆顶）
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> minHeap;
+
+        // 3. 遍历哈希表，让大家排队进俱乐部
+        for (auto& pair : freqMap) {
+            // 把 <频率, 数字> 压入堆中
+            // 注意这里我们把频率放前面，数字放后面：{pair.second, pair.first}
+            minHeap.push({pair.second, pair.first});
+            
+            // 如果俱乐部人数超标，踢掉最弱的（频率最低的）
+            if (minHeap.size() > k) {
+                minHeap.pop();
+            }
+        }
+
+        // 4. 结算：把俱乐部里剩下的 K 个大佬请出来
+        vector<int> result;
+        while (!minHeap.empty()) {
+            result.push_back(minHeap.top().second); // 我们只需要数字本身
+            minHeap.pop();
+        }
+
+        return result;
+    }
+};
+
+//我的小顶堆的代码：
+class Solution {
+public:
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+
+        unordered_map<int, int> freqMap;
+        for (int num:nums)
+        {
+            freqMap[num]++;
+        }
+
+        priority_queue < pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> myminHeap;
+
+        for (auto&  pair : freqMap)
+        {
+            myminHeap.push({pair .second,pair .first});
+            if (myminHeap.size() > k)
+            {
+                myminHeap.pop();
+            }
+
+        }
+
+        vector<int> result;
+
+        while (!myminHeap.empty())
+        {
+            result.push_back(myminHeap.top().second);
+            myminHeap.pop();
+        }
+
+        return result;
+
+    }
+};
