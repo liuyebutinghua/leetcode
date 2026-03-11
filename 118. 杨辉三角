@@ -1,0 +1,97 @@
+/*
+解题思路：
+Gemini 说
+这道题（LeetCode 118. 杨辉三角）是操作二维数组（在 C++ 中是嵌套的 vector）的绝佳入门练习，它同时也蕴含着基础的动态规划 (DP) 思想！
+
+你刚刚做完了“爬楼梯”，那道题是一维的“看前面两个人”，而杨辉三角就是升级版的二维“看头顶上的两个人”。
+
+1. 核心思维：找准“头顶上的那两个人”
+仔细观察杨辉三角的生成规则，我们可以总结出三条铁律：
+
+每行的元素个数：第 i 行（从 0 开始数）一定有 i + 1 个元素。比如第 0 行有 1 个，第 2 行有 3 个。
+
+两端的护城河：每一行的第一个元素和最后一个元素永远是 1。
+
+中间的加法：除了两端的 1，中间的任何一个元素，都等于它正上方和左上方的两个元素之和。
+
+将其转化为数组的下标公式（状态转移方程）：
+假设当前我们在填第 i 行的第 j 个位置（result[i][j]）。
+它头顶上的两个元素分别是：
+
+左上方：result[i - 1][j - 1]
+
+正上方：result[i - 1][j]
+
+所以核心公式就是：
+
+result[i][j]=result[i−1][j−1]+result[i−1][j]
+
+
+3. 代码细节拆解vector<int> row(i + 1, 1);这行代码堪称神来之笔。
+它直接创建了一行长度为 i + 1 的数组，并且把里面所有的值都默认设置成了 1。
+这样做的好处是，你根本不需要去单独写 if (j == 0 || j == i) 来判断是不是首尾。
+首尾的 1 已经天然存在了，你只需要用内层的 for 循环去覆盖掉中间那些原本是 1 的位置就行了。
+内层循环 for (int j = 1; j < i; j++)注意它的边界。
+比如第 2 行（也就是第三层，长度为 3），j < 2，只会执行 j = 1 这一次。正好只更新中间的那一个数字。
+
+4. 复杂度分析时间复杂度：$O(numRows^2)$。我们有一个外层循环 i 跑了 numRows 次，内层循环 j 每次跑 i 次。
+这是一个等差数列求和，总操作次数大约是 $\frac{numRows^2}{2}$。空间复杂度：$O(1)$。
+如果不考虑返回的答案 result 所占用的空间，我们没有使用额外的辅助空间。
+
+*/
+
+//ai的代码
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<int>> generate(int numRows) {
+        // 创建一个二维数组来存放整个杨辉三角
+        vector<vector<int>> result;
+
+        for (int i = 0; i < numRows; i++) {
+            // 第 i 行有 i + 1 个元素，我们先全部初始化为 1
+            // 这一步非常巧妙，直接把两端的“护城河”给建好了
+            vector<int> row(i + 1, 1);
+
+            // 从第 3 行（下标 i = 2）开始，才需要填中间的元素
+            // j 从 1 开始，到 i - 1 结束，避开了首尾的 1
+            for (int j = 1; j < i; j++) {
+                // 当前元素 = 上一行的左上角 + 上一行的正上方
+                row[j] = result[i - 1][j - 1] + result[i - 1][j];
+            }
+
+            // 把填好的一行塞进最终的结果里
+            result.push_back(row);
+        }
+
+        return result;
+    }
+};
+
+//我的代码：
+class Solution {
+public:
+    vector<vector<int>> generate(int numRows) {
+        vector<vector<int>> result;
+
+        for (int i = 0; i < numRows; i++)
+        {
+            vector<int> ceng(i+1,1);//i,实际是第i+1层，全部置为1，刚好把头和尾置为1 
+
+            for (int j = 1; j < i; j++) //以i=2开始，实际上是第三层开始叠加
+            {
+                ceng[j] = result[i - 1][j - 1] + result[i - 1][j];
+            }
+            result.push_back(ceng);
+
+        }
+
+        return result;
+
+
+    }
+};
+
