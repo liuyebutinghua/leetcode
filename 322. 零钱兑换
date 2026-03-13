@@ -1,0 +1,69 @@
+/*
+解题思路：
+完全背包问题（“完全平方数”的亲兄弟）的状态转移方程：dp[i] = min(dp[i], dp[i - coins[j]] + 1)。  
+
+与279. 完全平方数   题目思路一致
+
+但是我也发现了我很多的错误点：
+
+*/
+
+//我的第一版的代码（有错误）
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        vector<int> dp(amount + 1, INT_MAX);
+        dp[0] = 0;
+        int n = coins.size();
+
+
+        for (int i = 1; i <= amount; i++)
+        {
+            for (int j = 0; coins[j] <= i && j < n; j++)
+            {
+                dp[i] = min(dp[i], dp[i - coins[j]] + 1);
+            }
+
+
+        }
+
+        if (dp[amount] == INT_MAX)return -1;
+        else return dp[amount];
+
+    }
+};
+
+
+出现了三个问题：
+1.会出现INT_MAX+1，这种问题会导致整形溢出，导致结果出错，改进方法，把INT_MAX+1换成amount+1 ，因为amount+1是不可能到达的极大值
+2.coins[j] <= i && j < n;    会先检查coins[j] <= i   对于[5,2,1]的场景，检查到5时会直接退出循环，导致检查不彻底，解决办法，把coins[j] <= i放在for循环内，或者对coins进行一次单独排序
+3.coins[j] <= i && j < n;     这段代码是从左到右运行，会相信coin[n]的场景，导致内存越界，解决办法，和问题2 一样
+
+
+
+//完善后的代码：
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        vector<int> dp(amount + 1, amount + 1);
+        dp[0] = 0;
+        int n = coins.size();
+
+
+        for (int i = 1; i <= amount; i++)
+        {
+            for (int j = 0; j < n ; j++)
+            {
+                if (coins[j] <= i)
+                {
+                    dp[i] = min(dp[i], dp[i - coins[j]] + 1);
+                }
+                
+            }
+        }
+
+        if (dp[amount] == amount + 1)return -1;
+        else return dp[amount];
+
+    }
+};
