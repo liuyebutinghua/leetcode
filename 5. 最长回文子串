@@ -1,0 +1,255 @@
+/*
+
+1. 核心思维：剥洋葱法则（状态转移）什么是回文串？正着读和反着读完全一样，
+比如 "aba"，"abba"。我们换个角度看：如果一个字符串是回文串，
+那么把它的首尾两个字母剥掉，里面剩下的那部分，肯定还是个回文串！
+反过来说：如果我们知道里面的小串是回文串，只要再看看它左右两边新加的字母是不是一样
+，就能立刻判定这个大串是不是回文串！这就是完美的 DP 递推关系！我们定义一个二维数组：
+dp[i][j] 表示字符串从下标 i 到下标 j 的这一段，到底是不是回文串（true / false）。
+状态转移方程（灵魂发问）：当我们面对 s[i...j] 时：先看两头：如果 s[i] != s[j]，
+直接判死刑，绝对不是回文，dp[i][j] = false。两头相等：如果 s[i] == s[j]，那能不能成，
+就全看被夹在中间的那个串 s[i+1...j-1] 是不是回文了！即：dp[i][j] = dp[i+1][j-1]。
+
+2. 🚨 致命陷阱：填表的方向（必须倒着推！）这是这道 DP 题里全宇宙最多人踩的坑。
+看我们的状态转移公式：我们要算 dp[i][j]，必须提前知道 dp[i+1][j-1]。i+1 是下一行。
+j-1 是左边一列。这意味着，我们在表格里填当前格子时，必须要依赖它左下角的数据！
+如果你还像以前那样，i 从 0 到 $n$，j 也从 0 到 $n$ 正着去遍历，当你算 dp[0][3] 时，
+你需要查 dp[1][2]，但此时 dp[1][2] 根本还没算出来！破局方法：改变遍历方向！
+我们让外层循环的左边界 i 从右往左（从下往上） 倒着遍历！让内层循环的右边界 j 
+从 i 开始往右遍历。这样每次需要左下角的数据时，它绝对在上一轮就已经被算好了。
+
+
+3. 特殊照顾：极短的字符串（边界条件）当我们要查被夹在中间的 dp[i+1][j-1] 时，
+如果 i 和 j 靠得太近，中间根本没东西了怎么办？比如：长度为 1："a" (i == j)。
+自己肯定是回文。长度为 2："aa" (j - i == 1)。只要两个字母相等就是回文。
+长度为 3："aba" (j - i == 2)。只要首尾相等就是回文，不用查中间。总结一个极简规律：
+只要 s[i] == s[j]，并且它俩的距离 j - i <= 2，就不用去查什么 dp 数组了，
+直接判定它是回文 true！4. C++ 满分 DP 
+
+
+代码实现C++
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        int n = s.length();
+        if (n < 2) return s; // 长度为 1 或 0，直接返回本身
+
+        // dp[i][j] 表示 s[i...j] 是否是回文串
+        vector<vector<bool>> dp(n, vector<bool>(n, false));
+        
+        int max_len = 1;  // 记录最长回文串的长度，起步最少是 1
+        int begin = 0;    // 记录最长回文串的起始下标，方便最后去截取
+
+        // 🚨 灵魂操作：左边界 i 必须从右往左倒着遍历！
+        for (int i = n - 1; i >= 0; i--) {
+            // 右边界 j 肯定在 i 的右边，或者和 i 重合
+            for (int j = i; j < n; j++) {
+                
+                // 首尾字母相等
+                if (s[i] == s[j]) {
+                    // 距离小于等于 2（"a", "aa", "aba"），或者中间的小串也是回文
+                    if (j - i <= 2 || dp[i + 1][j - 1]) {
+                        dp[i][j] = true;
+                        
+                        // 一旦发现回文，赶紧看看是不是比历史记录更长
+                        if (j - i + 1 > max_len) {
+                            max_len = j - i + 1;
+                            begin = i;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 利用 string 的 substr 函数，从 begin 开始，截取 max_len 这么长
+        return s.substr(begin, max_len);
+    }
+};
+5. 复杂度与面试官的下一关时间复杂度：$O(N^2)$。两层 for 循环。空间复杂度：$O(N^2)$。开辟了一个 $N \times N$ 的布尔型二维数组。
+
+*/
+
+//我的代码
+
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        int n = s.size();
+        if (n ==1) return s;
+        vector < vector < bool >> bp(n, vector<bool>(n, false));
+
+        int max_len = 1;
+        int begin = 0;
+
+
+        for (int i = n - 1; i >= 0; i--)
+        {
+            for (int j = i; j < n; j++)
+            {
+                if (s[i] == s[j])
+                {
+                    if (j - i <= 2 || bp[i + 1][j - 1])
+                    {
+                        bp[i][j] = true;
+
+                        if (j - i + 1 > max_len)
+                        {
+                            max_len = j - i + 1;
+                            begin = i;
+                        }
+                    }
+                }
+            }
+        }
+
+        return s.substr(begin, max_len);
+
+    }
+};
+
+
+/*
+“这道题的空间复杂度太高了，如果不允许开辟二维数组，你能把空间复杂度降到绝对的 $O(1)$ 吗？”
+
+比起动态规划那种“先画格子再填表”的严谨，中心扩展法（Expand Around Center）更像是人类最直觉的本能。
+
+1. 核心思维：像水波一样向外扩散
+动态规划是从外向内“剥洋葱”（看头尾，查中间）；而中心扩展法是从内向外“扔石头”。
+
+想象你把一颗石头扔进平静的湖面，水波会以石头为中心，向左右两边一圈圈均匀扩散。
+对于字符串来说也是一样：我们只要选中一个“中心点”，然后让左右两个指针同时向两边走。只要左右指针指着的字母一模一样，水波就可以继续扩散（构成更长的回文）；一旦不一样，扩散立刻停止！
+
+2. 🚨 唯一的陷阱：回文串的“奇偶之分”
+这个算法极其简单，但 90% 的新手第一次写都会死在一个极度隐蔽的陷阱上：回文串的中心到底是什么？
+
+奇数长度（如 "aba"）：中心是一个字母 'b'。水波从 'b' 开始向两边扩散。
+
+偶数长度（如 "abba"）：中心不是某一个字母，而是两个 'b' 中间的那个“虚空缝隙”！
+
+破局策略：
+既然不知道最终最长的回文串是奇数还是偶数，那我们对于字符串里的每一个位置，都老老实实地做两次扩散尝试：
+
+以自己为中心（假装它是奇数长度）：左指针和右指针一开始都指着自己。
+
+以自己和右边的邻居为中心（假装它是偶数长度）：左指针指着自己，右指针指着右边的邻居。
+
+只要遍历完所有可能的中心点，挑一个扩散出水波最大的，就是我们要的答案！
+
+3. C++ 满分神仙代码 (O(1) 空间降维打击)
+为了让代码极致优雅，我们单独写一个“扩散”的小函数，主函数直接无脑调用它就行了。
+
+C++
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        if (s.empty()) return "";
+
+        int start = 0; // 记录最长回文串的起始位置
+        int end = 0;   // 记录最长回文串的结束位置
+
+        for (int i = 0; i < s.length(); i++) {
+            // 尝试 1：以 s[i] 自身为中心（奇数长度）
+            int len1 = expandAroundCenter(s, i, i);
+            
+            // 尝试 2：以 s[i] 和 s[i+1] 中间的缝隙为中心（偶数长度）
+            int len2 = expandAroundCenter(s, i, i + 1);
+
+            // 挑出这两种尝试里，扩散得更远的那一个
+            int max_len = max(len1, len2);
+
+            // 如果新扩散出的长度，打破了历史记录，就更新 start 和 end
+            if (max_len > end - start + 1) {
+                // 数学推导：通过中心点 i 和总长度 max_len，反推左右边界
+                // (max_len - 1) / 2 这个操作，完美兼容了奇数和偶数的情况
+                start = i - (max_len - 1) / 2;
+                end = i + max_len / 2;
+            }
+        }
+
+        // 从 start 开始截取，长度为 end - start + 1
+        return s.substr(start, end - start + 1);
+    }
+
+private:
+    // 专门用来执行“水波扩散”的辅助函数
+    // 返回值：以 left 和 right 为起点，能扩散出的【最大回文长度】
+    int expandAroundCenter(const string& s, int left, int right) {
+        // 只要不越界，且左右两边的字母相等，就一直往外扩
+        while (left >= 0 && right < s.length() && s[left] == s[right]) {
+            left--;
+            right++;
+        }
+        // ⚠️ 循环打破时，说明 left 和 right 指向的字母【已经不相等】了
+        // 或者已经越界了。
+        // 所以真正的回文串边界是 left + 1 到 right - 1
+        // 它的长度是 (right - 1) - (left + 1) + 1 = right - left - 1
+        return right - left - 1;
+    }
+};
+4. 复杂度发生了怎样的质变？
+时间复杂度：O(N 
+2
+ )。依然是两层嵌套逻辑（外面一层 for 遍历每一个中心，里面 while 执行扩散），因为最坏情况下（比如 "aaaaaa"），每次都要扩散到头。
+
+空间复杂度：O(1)！ 我们抛弃了那个庞大的 N×N 的 DP 二维数组，只用了 start、end、len1 等几个普通的整型变量，对内存的消耗近乎于零。
+
+顿悟时刻
+你看那个 start = i - (max_len - 1) / 2; 的反推边界公式，这是中心扩展法里最精妙的一笔数学计算。不论是最长回文是奇数还是偶数，这个公式都能精准地把中心点 i 还原成正确的起始端点。
+
+*/
+
+//我的代码：
+
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        int n = s.size();
+
+        if (n == 1)return s;
+
+        int start = 0;
+        int end = 0;
+
+        int max_len = 1;
+
+        for (int i = 0; i < n; i++)
+        {
+            int len1 = expandAroundCenter(s, i,i);
+            int len2= expandAroundCenter(s, i, i+1);
+
+            max_len = max(len1, len2);
+
+            if (max_len > end - start + 1)
+            {
+                start = i - (max_len - 1) / 2;
+                end = i + max_len / 2;
+            }
+
+        }
+
+        return s.substr(start,end-start+1);
+
+    }
+
+private:
+    int expandAroundCenter( const string& s,int left,int right)
+    {
+        while (left >= 0 && right < s.size() && left <= right && s[left] == s[right])
+        {
+            left--;
+            right++;
+        }
+        return right - left - 1;
+    }
+};
+
