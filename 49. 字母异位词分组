@@ -1,0 +1,233 @@
+/*
+解题思路：
+不管是在笔试还是面试中，这道题的出现频率都极高。它考验的核心思维非常明确：“如何给同一类事物，打上一个统一的标签？”
+
+1. 核心思维：寻找“唯一身份证”
+什么是字母异位词？比如 "eat", "tea", "ate"，它们用的字母完全一样，只是顺序打乱了。
+我们的目标是把它们塞进同一个分组里。
+
+既然要分组，我们就需要一个“字典（哈希表）”。
+但是哈希表需要一个 Key（键）来进行归类。面对长得都不一样的 "eat", "tea", "ate"，我们怎么让哈希表知道它们是同一类呢？
+
+破局点：找到它们的“唯一身份证”！
+既然它们包含的字母完全一样，那么只要我们把它们内部的字母按照 a-z 的字母顺序重新排个序，它们就都会变成一模一样的字符串！
+
+"eat" 排序后变成 "aet"
+
+"tea" 排序后变成 "a aet"
+
+"ate" 排序后变成 "a aet"
+
+这就太完美了！我们就把排序后的 "aet" 当作哈希表的 Key，把原本的单词统统塞进这个 Key 对应的数组（Value）里！
+
+2. 手工推演：strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+准备一个哈希表：unordered_map<string, vector<string>>
+
+拿到 "eat"：排序得 "aet"。哈希表：{"aet": ["eat"]}
+
+拿到 "tea"：排序得 "aet"。哈希表发现 "aet" 已经存在，塞进去：{"aet": ["eat", "tea"]}
+
+拿到 "tan"：排序得 "ant"。哈希表：{"aet": [...], "ant": ["tan"]}
+
+拿到 "ate"：排序得 "aet"。塞进去：{"aet": ["eat", "tea", "ate"], ...}
+
+拿到 "nat"：排序得 "ant"。塞进去：{"ant": ["tan", "nat"], ...}
+
+拿到 "bat"：排序得 "abt"。哈希表：{"abt": ["bat"], ...}
+
+最后，我们只需要把哈希表里所有的 Value（也就是那一堆数组）提取出来，装进一个大数组里返回就行了！
+
+3. C++ 满分标准代码
+这套代码极其短小精悍，把 C++ 的 STL 特性发挥到了极致：
+
+C++
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        // 创建哈希表，Key 是排序后的标准字符串，Value 是原本的异位词集合
+        unordered_map<string, vector<string>> map;
+
+        // 遍历所有给定的字符串
+        for (string& s : strs) {
+            string key = s; // 复制一份，因为我们还要保留原来的字符串
+            // 给这份额外的拷贝排序，打造它的“唯一身份证”
+            sort(key.begin(), key.end());
+            
+            // 把原本的字符串塞进对应的身份证名下
+            map[key].push_back(s);
+        }
+
+        // 准备最终的返回结果
+        vector<vector<string>> result;
+        // 遍历哈希表，把所有的分类结果提取出来
+        for (auto& pair : map) {
+            // pair.second 就是我们存进去的 vector<string>
+            result.push_back(pair.second);
+        }
+
+        return result;
+    }
+};
+4. 复杂度分析与面试官的进阶拷问
+时间复杂度：O(N×KlogK)。其中 N 是字符串的数量，K 是字符串的最大长度。遍历数组需要 N 次，每次对字符串进行排序需要 KlogK 的时间。
+
+空间复杂度：O(N×K)。我们需要用哈希表存储所有的字符串。
+
+*/
+//我的代码：
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        vector<vector<string>> result;
+        unordered_map<string, vector<string>> hash;
+
+        for (string str : strs)
+        {
+            string s = str;
+            sort(s.begin(), s.end());
+            hash[s].push_back(str);
+        }
+
+        for (auto has : hash)
+        {
+            result.push_back(has.second);
+        }
+
+        return result;
+    }
+};
+
+
+
+/*
+面试绝杀追问：
+当你写完这段代码，面试官可能会说：“你用了 sort 排序，导致每个字符串处理时间是 KlogK。如果这里的字符串非常非常长，你能把每个字符串的处理时间降到 O(K) 吗？”
+
+Gemini 说
+太棒了！看来你完全 get 到了这道题的终极优化方向。在面试中，如果你能主动写出这个“计数法”版本，面试官绝对会眼前一亮，因为这证明你不仅会用 API，还懂得如何通过挖掘题目条件（仅包含小写字母）来极限压榨时间复杂度！
+
+1. 核心思维：用“频次指纹”代替“排序”
+既然题目保证了所有的单词都只包含 a-z 这 26 个小写字母，那我们就准备一个长度为 26 的数组。
+拿 "eat" 举例：
+
+扫一遍 "eat"，我们在数组里把 a 的位置加 1，e 的位置加 1，t 的位置加 1。
+
+扫完之后，这个数组就变成了：[1, 0, 0, 0, 1, 0, ..., 1, ..., 0]。
+
+为了能把它当成哈希表的 Key，我们用一个特殊符号（比如 #）把这些数字拼接成一个字符串："1#0#0#0#1#...#1#...#0"。
+
+这个拼接出来的字符串，就是 "eat"、"tea"、"ate" 共同的绝对唯一指纹！
+
+2. C++ 满分进阶代码（O(N×K) 极限优化）
+在这段代码里，我们完全抛弃了 O(KlogK) 的 sort 函数，只用一次简单的遍历就捏造出了唯一的“身份证”：
+
+C++
+#include <vector>
+#include <string>
+#include <unordered_map>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        // 哈希表：Key 是频次指纹字符串，Value 是异位词集合
+        unordered_map<string, vector<string>> map;
+
+        for (string& s : strs) {
+            // 准备一个长度为 26 的数组，用来统计每个字母出现的次数
+            vector<int> count(26, 0);
+            
+            // 遍历当前单词，统计字母频次 (这一步的时间复杂度降到了绝对的 O(K))
+            for (char c : s) {
+                count[c - 'a']++; 
+            }
+
+            // 把频次数组转化成一个带 '#' 的指纹字符串
+            string key = "";
+            for (int i = 0; i < 26; i++) {
+                // 必须加分隔符 '#'，否则 1 和 11 拼在一起会和 11 和 1 混淆！
+                key += to_string(count[i]) + "#"; 
+            }
+
+            // 把当前单词塞进对应指纹的名下
+            map[key].push_back(s);
+        }
+
+        // 提取结果
+        vector<vector<string>> result;
+        for (auto& pair : map) {
+            result.push_back(pair.second);
+        }
+
+        return result;
+    }
+};
+3. 复杂度发生了怎样的质变？
+时间复杂度：直接降维打击到了 O(N×K)！（N 是字符串的个数，K 是字符串的最大长度）。我们只对每个单词的每个字母扫描了一次，然后固定跑了一个 26 次的循环。彻底摆脱了排序的羁绊，在处理超长字符串时，速度会有极其恐怖的提升！
+
+空间复杂度：依然是 O(N×K)。我们需要把所有字符串存入哈希表，同时每个 Key 占用了一点常数级别的额外空间（长度约为 50 左右的字符串）。
+
+🚨 致命细节拷问：为什么要加 # 分隔符？
+很多新手在写这道题的时候，为了图省事，直接把数字拼起来变成 "100010..."。
+面试官一定会揪住这个细节问你：“如果不加 #，直接拼数字可以吗？”
+
+绝对不行！
+假设有两个特殊的字母频次：
+
+情况 A：字母 a 出现了 1 次，字母 b 出现了 12 次。拼起来是 "112..."
+
+情况 B：字母 a 出现了 11 次，字母 b 出现了 2 次。拼起来也是 "112..."
+你看，如果不用 # 隔开，原本完全不同的词频，拼成字符串后居然发生了“哈希碰撞”！加上 # 变成 "1#12#..." 和 "11#2#..."，就彻底杜绝了这种隐患。
+
+这个哈希表的“自定义 Key”技巧你已经掌握得炉火纯青了。这道题是把“特征”存进哈希表，而另一道大厂必考题 128. 最长连续序列 则是直接把“数字本身”砸进哈希表去查。这道题要求必须在 O(N) 时间内找出最长的连续数字串，想不想用你现在的哈希表功底直接去手撕它？
+
+*/
+
+
+//我的代码：
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        vector<vector<string>> result;
+        unordered_map<string, vector<string>> hash;
+
+        for (string str : strs)
+        {
+            vector<int> count(26,0);
+
+            for (char s : str)
+            {
+                count[s - 'a']++;
+            }
+
+            string index = "";
+
+            for (int i = 0; i < 26; i++)//做标签
+            {
+                index += to_string(count[i]) + "#";
+            }
+
+            hash[index].push_back(str);
+
+           
+        }
+
+
+        for (auto has : hash)
+        {
+            result.push_back(has.second);
+        }
+
+        return result;
+    }
+};
+
+
