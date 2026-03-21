@@ -1,0 +1,93 @@
+/*
+这道题不仅把“双指针相向而行”考到了极致，还完美地融入了“贪心（Greedy）”的思想。很多人第一次做这道题时想破脑袋都想不出 O(N) 的解法，但只要被人点拨一句，就会立刻发出“卧槽，原来这么简单”的感叹。
+
+1. 核心思维：木桶原理与“稳赚不赔”的贪心策略
+装水的容量由什么决定？
+两个因素：底部的宽度 × 两边较短的那块木板的高度（经典的木桶效应）。
+
+如果我们用暴力解法（两层 for 循环），我们要两两组合所有的柱子，时间复杂度直接原地爆炸成 O(N²)。
+
+怎么用双指针把它降维到 O(N)？
+我们直接把左指针 left 放在最左边（下标 0），右指针 right 放在最右边（下标 n-1）。
+此时，容器的“宽度”是最大的！
+
+接下来，我们要开始往中间缩（宽度不可避免地会变小）。
+灵魂拷问：宽度都要变小了，我们怎么做才能让总体积“有可能”变大？
+假设左边的柱子高是 2，右边的柱子高是 8。现在的瓶颈是左边那个矮子（2）。
+
+选择 1：移动高的那根柱子（右指针向左走）。 既然高度是由矮子决定的，你就算在中间找出一根高耸入云的柱子，水依然会从左边那个高为 2 的柱子漏出去。所以，高度最多还是 2，而宽度变小了，面积绝对会变小！纯纯的赔本买卖。
+
+选择 2：移动矮的那根柱子（左指针向右走）。 我们抛弃那个拖后腿的矮子，去中间碰碰运气。哪怕宽度变小了，但只要我们在中间找到一根足够高的柱子，面积就有可能逆风翻盘，变得更大！
+
+这就是这道题唯一的通关秘籍：每次都果断抛弃较短的那根柱子，向中间移动！
+
+2. C++ 满分极客代码
+顺着这个极致贪心的逻辑，代码写出来连 15 行都不到，干净得让人神清气爽：
+
+C++
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int left = 0;                      // 左指针，站在最左边
+        int right = height.size() - 1;     // 右指针，站在最右边
+        int max_water = 0;                 // 记录历史最大水量
+
+        // 两个指针相向而行，直到相遇
+        while (left < right) {
+            // 算一下当前的容量：宽度 * 较矮的柱子高度
+            int current_width = right - left;
+            int current_height = min(height[left], height[right]);
+            int current_water = current_width * current_height;
+
+            // 更新历史最高记录
+            max_water = max(max_water, current_water);
+
+            // 🌟 核心贪心法则：谁矮，谁就往前走一步去碰碰运气！
+            if (height[left] < height[right]) {
+                left++;
+            } else {
+                right--;
+            }
+        }
+
+        return max_water;
+    }
+};
+3. 复杂度分析
+时间复杂度：O(N)。两个指针一左一右往中间跑，绝不回头，直到相遇。整个数组最多只被遍历了一次。
+
+空间复杂度：O(1)。只用了 left、right、max_water 这几个常数级别的变量。
+
+顿悟时刻
+这道题的精髓就在于“剪枝”。当我们决定移动矮柱子的时候，其实我们是一口气排除了所有以这根矮柱子为边界的其他组合。因为根据木桶原理，保留矮柱子往里缩，面积只会越来越小，根本没必要再看了。这就是贪心算法“稳准狠”的魅力。
+
+*/
+
+//我的代码：
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int left = 0, right = height.size() - 1, max_area = 0,area=0;
+       
+        while (left < right)
+        {
+            area = (right - left) * min(height[right], height[left]);
+            max_area = max(max_area, area);
+
+            if (height[right] > height[left])
+            {
+                left++;
+            }
+            else
+            {
+                right--;
+            }
+        }
+        return max_area;
+    }
+};
