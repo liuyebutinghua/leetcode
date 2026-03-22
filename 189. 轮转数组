@@ -36,3 +36,23 @@ void rotate(int* nums, int numsSize, int k) {
     }
 
 }
+
+//我的第二次的代码：
+class Solution {
+public:
+    void rotate(vector<int>& nums, int k) {
+        reverse(nums.begin(), nums.end());
+
+        
+        int n = nums.size();
+        int k_true = k % n;
+        for (int i = 0; i < k_true/2; i++)
+        {
+            swap(nums[i], nums[k_true-i-1]);
+        }
+        for (int i = k_true; i < (n + k_true) / 2; i++)
+        {
+            swap(nums[i], nums[n + k_true-i-1]);
+        }
+    }
+};
