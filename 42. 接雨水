@@ -1,0 +1,118 @@
+/*
+这道题（LeetCode 42. 接雨水）是无数程序员面试时的“梦魇”，也是 LeetCode 历史上最经典、讨论度最高的 Hard（困难）题之一。
+
+你能一路从“移动零”、“盛最多水的容器”、“三数之和”杀到这里，你的双指针（Two Pointers）功底已经具备了屠龙的实力。
+
+我们马上来撕开这道题极其吓人的外衣，看看它到底是怎么被双指针“降维打击”的。
+
+1. 核心思维：视角切换，从“整体”到“局部”
+在第 11 题“盛最多水的容器”里，我们看的是整体：左右两根柱子能围成多大的一个大水槽。
+但这道题中间有高高低低的柱子，水会被分割成一个个小水洼。如果再用“整体”的视角去算，绝对会脑子爆炸。
+
+灵魂破局点：把视角缩小到“每一根柱子”！
+我们不去算总共能装多少水，我们只问一个问题：对于数组里的任意一根柱子 i，它的头顶上到底能积攒多少水？
+
+根据木桶原理，柱子 i 头顶上的水，是由它**左边最高的山峰（left_max）和右边最高的山峰（right_max）**决定的。
+具体公式极其符合直觉：
+当前柱子的积水 = min(左边最高山峰, 右边最高山峰) - 当前柱子自身的高度
+(当然，如果这个算出来是负数，说明这根柱子本身就是个高耸入云的山峰，水全流走了，积水为 0)。
+
+2. 双指针的神级推演：为什么不需要知道全部？
+如果用死板的方法，我们需要给每一根柱子都向左、向右扫描一遍找最高峰，时间复杂度是 O(N²)。
+聪明一点的人会提前开辟两个数组，把每个位置的 left_max 和 right_max 存起来，时间 O(N)，空间也是 O(N)（这叫动态规划法，也是极其优秀的解法）。
+
+但我们是双指针大师，我们要挑战绝对的 O(1) 空间！
+
+我们在最左边放一个指针 left，在最右边放一个指针 right。相向而行。
+同时，我们手里捏着两个变量：l_max（记录左边目前见过的最高峰）和 r_max（记录右边目前见过的最高峰）。
+
+极其震撼的贪心逻辑来了：
+假设现在 l_max < r_max。
+对于左指针 left 来说，它的左边最高确定是 l_max。它的右边呢？不管右边地形多么崎岖，至少有一个 r_max 屹立在那里，而且 r_max 比 l_max 还要高！
+这意味着什么？这就意味着，决定 left 柱子头顶上积水深度的“短板”，绝对是 l_max！右边再高也没用，水早就从左边漏光了！
+
+所以，当 l_max < r_max 时，我们根本不需要知道右边具体的全貌，直接就可以自信地计算 left 柱子的水量：l_max - height[left]，然后让 left 往前走！
+反之同理，当 l_max >= r_max 时，短板在右边，我们直接计算 right 柱子的水量，然后 right 往左走！
+
+3. C++ 满分绝杀代码
+理解了这个“谁是短板谁先算”的逻辑，代码短得让人难以置信，完全看不出这是一道 Hard 题：
+
+C++
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        if (height.empty()) return 0;
+
+        int left = 0;
+        int right = height.size() - 1;
+        
+        // 记录左右两端目前见过的最高山峰
+        int l_max = 0;
+        int r_max = 0;
+        
+        int total_water = 0;
+
+        // 左右指针相向而行，直到相遇
+        while (left < right) {
+            // 更新目前见过的最高峰
+            l_max = max(l_max, height[left]);
+            r_max = max(r_max, height[right]);
+
+            // 🌟 核心贪心：谁矮，谁就是决定水位的短板！
+            if (l_max < r_max) {
+                // 左边的高峰更矮，所以左指针这里的积水由 l_max 决定
+                // 积水 = 木板高度 (l_max) - 坑底高度 (height[left])
+                total_water += l_max - height[left];
+                left++; // 左边这个坑算完了，往右看下一个
+            } else {
+                // 右边的高峰更矮（或相等），所以右指针这里的积水由 r_max 决定
+                total_water += r_max - height[right];
+                right--; // 右边这个坑算完了，往左看下一个
+            }
+        }
+
+        return total_water;
+    }
+};
+4. 复杂度分析
+时间复杂度：O(N)。左右两个指针一人走一头，相遇就结束，整个数组只被遍历了一次。
+
+空间复杂度：O(1)。只用了 left, right, l_max, r_max 四个变量，没有任何额外的数组开销。极致的内存压榨！
+*/
+
+
+//我的代码：
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        int left = 0, right = height.size() - 1,max_l=0,max_r=0;
+
+        int max_water = 0;
+
+        while (left < right)
+        {
+            max_l = max(max_l,height[left]);
+            max_r = max(max_r,height[right]);
+
+            if (max_l < max_r)
+            {
+                max_water += max_l - height[left];
+                left++;
+            }
+            else
+            {
+                max_water += max_r - height[right];
+                right--;
+            }
+
+        }
+
+        return max_water;
+
+    }
+};
