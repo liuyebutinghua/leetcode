@@ -1,119 +1,159 @@
 /*
-560. 和为 K 的子数组
+太会挑题了！既然你刚刚从 438 题的“滑动窗口”走出来，你看到这道题（LeetCode 560. 和为 K 的子数组）的第一反应，绝对是：“简单！这不就是个可以伸缩的动态滑动窗口吗？”
+
+🚨 致命陷阱预警：这道题绝对不能用滑动窗口！
+
+仔细看题目：nums 是一个整数数组。这意味着数组里可能有负数！
+滑动窗口的核心逻辑是：窗口扩大，总和增加；窗口缩小，总和减少。但如果有了负数，你吃进一个 -5，总和反而变小了；你吐出一个 -5，总和反而变大了。窗口的单调性被彻底破坏，滑动窗口在这道题里直接瘫痪。
+
+既然滑动窗口被废了，两层 for 循环的暴力法又会超时（O(N 
+2
+ )），那我们该怎么在 O(N) 的时间里秒杀它？
+这就要请出数组算法领域的另一大终极杀器：前缀和（Prefix Sum） + 哈希表！
+
+1. 核心思维：查账本的“前缀和”
+什么是“前缀和”？
+通俗点说，就是你每天的“银行卡总余额”。
+假设你每天都有收入或支出（数组 nums），那么你第 5 天的余额（前缀和 preSum[5]），就是你从第 0 天到第 5 天所有账目的总和。
+
+灵魂推导：
+如果我想知道：“从第 2 天到第 5 天，我到底赚了多少钱？”
+我需要把这几天的账目重新加一遍吗？绝对不需要！
+我只要用 “第 5 天的余额” 减去 “第 1 天的余额” 就可以了！
+公式就是：某段子数组的和 = 当前的前缀和 - 过去某天的一个前缀和。
+
+题目要求这段子数组的和必须等于 k，也就是：
+
+当前前缀和−过去的前缀和=k
+把公式稍微变一下形，它就变成了我们在“两数之和”里玩得最溜的套路：
+
+过去的前缀和=当前前缀和−k
+破局点来了：
+我们只需要从头到尾遍历数组，一边算当前的“总余额”（前缀和），一边去哈希表（账本）里查一查：在过去的日子里，有没有哪天的余额刚好等于 当前余额 - k？如果有，出现了几次？
+如果有，说明它们之间的那段明细，加起来绝对刚好等于 k！
+
+2. 手工推演：nums = [1, -1, 1, 1, 1], k = 2
+准备一个哈希表 map，用来记录 “某种余额出现的次数”。
+🚨 极其重要的一步：初始化 map[0] = 1。 （这代表在第 0 天还没开始记账时，你的初始余额是 0，这个 0 出现了一次。为了处理刚好从第一天开始的子数组）。
+
+走到 1：当前余额是 1。
+
+我们想找历史余额：1 - 2 = -1。哈希表里没有 -1。
+
+把当前余额记入账本：map[1] = 1。
+
+走到 -1：当前余额变回 0（因为 1 + (-1) = 0）。
+
+想找历史余额：0 - 2 = -2。没有。
+
+记入账本：map[0] 原本是 1，现在变成 2 次了！
+
+走到 1：当前余额是 1。
+
+想找历史余额：1 - 2 = -1。没有。
+
+记入账本：map[1] 变成 2 次。
+
+走到 1：当前余额是 2。
+
+想找历史余额：2 - 2 = 0。太棒了！去账本里一查，余额为 0 的情况在过去出现过 2 次！
+
+说明我们找到了 2 个符合条件的子数组！把答案 count += 2。
+
+记入账本：map[2] = 1。
+
+走到 1：当前余额是 3。
+
+想找历史余额：3 - 2 = 1。去账本一查，余额为 1 的情况在过去出现过 2 次！
+
+答案再加 2：count += 2。
+
+记入账本：map[3] = 1。
+
+最终答案是 4 个子数组！
+
+3. C++ 满分工业级代码
+只要理解了“查余额”的逻辑，代码写起来就跟“两数之和（Two Sum）”一样简单优雅：
+
+C++
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        // 哈希表：Key 存“前缀和（余额）”，Value 存“这个余额出现的次数”
+        unordered_map<int, int> preSumFreq;
+        
+        // 🚨 灵魂初始化：什么都没加的时候，前缀和为 0 的情况出现了 1 次
+        // 如果不加这一句，那些从下标 0 开始的、刚好等于 k 的子数组就会被漏掉！
+        preSumFreq[0] = 1; 
+
+        int count = 0;  // 记录符合条件的子数组总数
+        int preSum = 0; // 记录当前的前缀和（当前的银行卡总余额）
+
+        for (int num : nums) {
+            preSum += num; // 更新当前余额
+
+            // 查账本：看看过去有没有哪天的余额，刚好等于 preSum - k
+            if (preSumFreq.count(preSum - k)) {
+                // 如果有，过去出现过几次，就说明有几个符合条件的子数组
+                count += preSumFreq[preSum - k];
+            }
+
+            // 查完账之后，把自己今天的余额也记入账本，供未来的天数去查
+            preSumFreq[preSum]++;
+        }
+
+        return count;
+    }
+};
+4. 复杂度发生了怎样的质变？
+时间复杂度：O(N)。我们仅仅只是把数组从头到尾遍历了一次，每次循环里在哈希表中查找和插入的时间都是 O(1)。
+
+空间复杂度：O(N)。因为我们需要把遇到过的前缀和存进哈希表中，最坏情况下所有的前缀和都不一样，哈希表的大小就是 N。
+
+顿悟时刻
+这道题的精妙之处在于它完成了两次降维打击：
+
+用 前缀和 把“求区间总和”从 O(N) 降到了 O(1)（只需做一次减法）。
+
+用 哈希表 把“寻找特定的前缀和”从 O(N) 倒退查找，又降到了 O(1)。
+
+这种 “前缀和 + 哈希表” 的组合拳，在大厂面试里专门用来对付各种“求连续子数组的和 / 频次 / 奇偶性”的变态题目。
 */
 
+//我的代码：
+
 class Solution {
 public:
     int subarraySum(vector<int>& nums, int k) {
         int n = nums.size();
-        unordered_map<int,int> mp;
-        int cnt = 0;
-        int preSum = 0;
-        mp[0] = 1;
-        for (int val:nums) {
-            //preSum为左闭右闭当前元素的前缀和
-            preSum += val;
-            //如果找到了 说明有区间存在 和两数之和中遍历过程中找nums - target是一个道理
-            if (mp.find(preSum - k) != mp.end()) {
-                //加上出现的次数
-                cnt += mp[preSum - k];
+
+        unordered_map<int, int> map;
+        map[0] = 1;
+
+        int sum = 0;
+        int K_num = 0;
+        for (int& num : nums)
+        {
+            sum += num;
+
+            if (map.find(sum - k) != map.end())//找到了
+            {
+                K_num += map[sum - k];
             }
-            //不管是否找到 都插入mp中
-            mp[preSum]++;
+
+            map[sum]++;
         }
-        return cnt;
+
+
+        return K_num;
     }
 };
 
-/*
-
-1.这道题第一想法就是枚举每个元素 向后累加 判断是否为子数组 超时
-
-class Solution {
-public:
-    int subarraySum(vector<int>& nums, int k) {
-        int cnt = 0;
-        for (int i = 0;i < nums.size();i++) { //枚举左端点
-            int sum = 0;
-            for (int j = i;j < nums.size();j++) {//枚举右边界
-                sum += nums[j];
-                if (sum == k) cnt++;
-            }
-        }
-        return cnt;
-    }
-};
-2.前缀和
-
-1.构造前缀和数组需要明白prefixSum[i]的含义 
-    prefixSum[i] = nums[i - 1] + nums[i - 2] + ... + nums[0]
-2.prefixSum[0] = 0
-3.由1得prefixSum[0]表示nums[0 - 1]是无意义的 只是为了可以统一计算
-
-    nums = [4,2,5,2]
-prefixSum= [0,4,6,11,13]
-所以本题中prefixSum[i]就是下标为0 - i的nums的数组和
-那么prefixSum[i] - prefixSum[j]就是下标为j - i的nums的数组和
-也就是我们想找的子数组为k的答案
-
-class Solution {
-public:
-    int subarraySum(vector<int>& nums, int k) {
-        vector<int> prefixSum;
-        int n = nums.size();
-        prefixSum.resize(n + 1);
-        prefixSum[0] = 0;
-        int cnt = 0;
-        for (int i = 0;i < n;i++) {
-            prefixSum[i + 1] = prefixSum[i] + nums[i]; //前缀和
-            for (int j = 0;j <= i;j++) {
-                if (prefixSum[i + 1] - k == prefixSum[j]) cnt++;
-            }
-        }
-        return cnt;
-    }
-};
-3.使用hashTable动态维护前缀和
-
-因为用vector维护前缀和 时间复杂度会到O(n^2) 用hash优化
-c++中采用unordered_map达到去重并存储键值对
-
-复杂度
-时间复杂度:
-
-O(n) 遍历一次nums
-
-空间复杂度:
-
-O(n) 主要为hashTable维护前缀和所带来的额外空间
-
-Code
-class Solution {
-public:
-    int subarraySum(vector<int>& nums, int k) {
-        int n = nums.size();
-        unordered_map<int,int> mp;
-        int cnt = 0;
-        int preSum = 0;
-        mp[0] = 1;
-        for (int val:nums) {
-            //preSum为左闭右闭当前元素的前缀和
-            preSum += val;
-            //如果找到了 说明有区间存在 和两数之和中遍历过程中找nums - target是一个道理
-            if (mp.find(preSum - k) != mp.end()) {
-                //加上出现的次数
-                cnt += mp[preSum - k];
-            }
-            //不管是否找到 都插入mp中
-            mp[preSum]++;
-        }
-        return cnt;
-    }
-};
-
-
-
-*/
 
 
 
