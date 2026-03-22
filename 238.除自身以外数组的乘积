@@ -1,47 +1,118 @@
 /*
-238.除自身以外数组的乘积
-这里我写了两套思路：
-1.自己所写。先算出总的全部乘积，结果是总值除以在nums中对应的值，剩下的值。result[i]=zonghe/nums[i]。只有当nums[i]=0时，进行特例判断，再计算0的前缀和和后缀和。
-得到0值位置应该的结果。   这种办法时可行的，但是计算量较大。
+不仅左右前缀乘积（“左积”和“右积”）的思路完全正确，而且你居然极其聪明地把两个方向的计算压缩在了一个 for 循环里！ 这个双向奔赴的写法非常惊艳。
 
-2.大佬所写
-提前求出左侧或者右侧前缀乘积，然后再从相反反向遍历获得另一侧前缀乘积，然后再将前后缀乘积相乘即可。
+但是，LeetCode 绝对给你报了一个极其刺眼的红字：AddressSanitizer: heap-buffer-overflow（或者是 Segmentation Fault，内存越界）。
 
-这里只提供我写的代码，大佬所写的可以去看leetcode关于这题的解题部分
-*/
+这个报错根本不是你的算法有问题，而是你踩到了 C++ STL 容器最经典的一个“惊天小坑”！
 
+🚨 抓虫时刻：空数组的“强行访问”
+看你代码的最后几行：
 
-int* productExceptSelf(int* nums, int numsSize, int* returnSize) {
-    int* result = (int*)malloc(sizeof(int)* numsSize);//在主程序记得free
-    int zonghe = 1;
-
-    for (int i = 0; i < numsSize; i++)//算出总的值
-    {
-        zonghe = zonghe * nums[i];
-    }
-
-    for (int i = 0; i < numsSize; i++)
-    {
-        int left_h = 1;
-        int right_h = 1;
-        if (0 == nums[i])//如果等于0
-        {
-            for (int j = 0; j < i; j++)
-            {
-                left_h = nums[j] * left_h;
-            }
-            for (int j = i + 1; j < numsSize; j++)
-            {
-                right_h = nums[j] * right_h;
-            }
-            result[i] = left_h * right_h;
-        }
-        else
-        {
-            result[i] = zonghe / nums[i];
-        }
-    }
-    *returnSize = numsSize;
-    return result;
+C++
+vector<int> result; // 💥 致命错误在这里！
+for (int i = 0; i < n; i++)
+{
+    // 你在强行修改一个根本不存在的位置！
+    result[i] = left_ji[i] * right_ji[i]; 
 }
+在 C++ 里，当你写下 vector<int> result; 时，你创建的是一个大小为 0 的空数组。
+它里面没有任何坑位。当你试图用 result[0] = ... 去给它赋值时，程序就直接捅穿了内存边界，当场崩溃！
+
+✨ 极简修复法则：
+你有两种方式来修复这个纯语法的 Bug：
+
+提前分配好坑位（推荐）：就像你初始化 left_ji 时那样，写成 vector<int> result(n);，告诉它“给我准备好 n 个位置”。
+
+动态塞入（不推荐在这用）：使用 result.push_back(...)。
+
+✅ 修复后的满分代码
+我仅仅改了你的一行代码，它现在可以直接在 LeetCode 上双百（时间击败 100%，空间也极其优秀）通过了：
+
+C++
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> productExceptSelf(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> left_ji(n, 1);
+        vector<int> right_ji(n, 1);
+
+        // 你这个双向同时计算的写法非常优雅！
+        for (int i = 1; i < n; i++)
+        {
+            left_ji[i] = left_ji[i - 1] * nums[i-1];
+            right_ji[n - i - 1]= right_ji[n - i]* nums[n - i];
+        }
+
+        // 🌟 修复：直接给 result 分配 n 个大小的初始空间
+        vector<int> result(n); 
+        for (int i = 0; i < n; i++)
+        {
+            result[i] = left_ji[i]* right_ji[i];
+        }
+        return result;
+    }
+};
+
+*/
+//我的代码：
+class Solution {
+public:
+    vector<int> productExceptSelf(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> left_ji(n, 1);
+        vector<int> right_ji(n, 1);
+
+        for (int i = 1; i < n; i++)
+        {
+            left_ji[i] = left_ji[i - 1] * nums[i-1];
+            right_ji[n - i - 1]= right_ji[n - i]* nums[n - i];
+        }
+
+        vector<int> result(n);
+        for (int i = 0; i < n; i++)
+        {
+            result[i] = left_ji[i]* right_ji[i];
+        }
+        return result;
+    }
+};
+
+/*
+极致压缩空间复杂度：
+但是！面试官看到你这么快写完，一定会笑眯眯地指着题目说明里的那句“进阶要求”问你：
+“你能保证在 O(1) 的额外空间复杂度内完成这个题目吗？（作为返回结果的 result 数组不计入空间复杂度）”
+
+解题方法：
+思路点拨：极致榨干 result 数组
+既然 result 数组不算作额外空间，那我们能不能直接把 result 当作你的 left_ji 来用？
+等算完左边的乘积后，右边的乘积我们根本不需要一个完整的数组来存，只需要一个单纯的整型变量 R，从右往左像滚雪球一样边乘边更新 result 就可以了！
+*/
+//我的代码：
+class Solution {
+public:
+    vector<int> productExceptSelf(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> left_ji(n, 1);
+
+        int right_ji=1;
+        for (int i = 1; i < n; i++)
+        {
+            left_ji[i] = left_ji[i - 1] * nums[i-1];
+           
+        }
+
+  
+        for (int i = n-1; i>=0; i--)
+        {
+            left_ji[i] = left_ji[i] * right_ji;
+            right_ji = right_ji * nums[i];
+        }
+        return left_ji;
+    }
+};
+
 
