@@ -1,46 +1,118 @@
 /*
-56. 合并区间
-这道题主要参考：贪心算法和大神写的代码，自己对c语言还是太浅，还需要继续学习
-bilibili:【贪心算法，思路不难想，但代码不好写！LeetCode:738.单调自增的数字】https://www.bilibili.com/video/BV1Kv4y1x7tP?vd_source=dda139f023c5a11b2f1289f1a0813142
+Gemini 说
+你的核心逻辑写得极其精彩！你完全领悟了这道题的精髓：用 left 和 right 两个变量当做“口袋”，遇到连不上的就打包扔进结果集，遇到能连上的就把“口袋”撑大（取 max）。
+
+但是，LeetCode 给你报了错，或者答案不对。这是因为你掉进了一个这道题里 99% 的人第一次都会踩的“隐形大坑”：
+
+🚨 致命缺失：题目给的区间可能是【乱序】的！
+看题目说明：intervals = [[1, 4], [0, 2]]。
+如果你直接用你的代码跑：
+
+一上来 left = 1, right = 4。
+
+看到下一个区间 [0, 2]。right (4) < intervals[i][0] (0) 是 false。
+
+走你的 else 分支去合并：left = min(1, 0) = 0, right = max(4, 2) = 4。
+在这个简单的例子里，碰巧对了。
+
+但是如果是 intervals = [[1, 4], [5, 6], [0, 0]] 呢？
+当你的代码处理完 [5, 6] 时，发现它和前面的 [1, 4] 连不上，就把 [1, 4] 装进结果集了。等读到最后的 [0, 0] 时，由于它跟 [5, 6] 也连不上，结果集变成了 [[1, 4], [5, 6], [0, 0]]。这完全乱套了！
+
+💡 破局之道：先排序！
+要把区间合并，必须保证我们在数轴上是从左往右、老老实实地扫过去的。
+只要我们先按照区间的“左边界”从小到大排个序，接下来的事情就变成了极其简单的贪心算法。
+
+而且，一旦排好序，你的代码里甚至能删掉一句废话：
+因为排好序了，后面遇到的区间的左边界，绝对不可能比你当前口袋里的 left 还要小！所以 left = min(left, intervals[i][0]) 这句其实根本不需要，left 稳如泰山，我们只需要一门心思去撑大 right 就行了。
+
+✅ 加上排序后的满分代码
+只需在开头加上一行 sort，你的代码就直接变成大厂的标准答案了：
+
+C++
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        int n = intervals.size();
+        if (n <= 1) return intervals; // 习惯性防一手空数组和单元素
+
+        // 🌟 灵魂补丁：必须先按左端点升序排序！
+        // C++ 的 sort 默认比较 vector 的第一个元素，也就是刚好按照 starti 排序
+        sort(intervals.begin(), intervals.end());
+
+        vector<vector<int>> result;
+        int left = intervals[0][0];
+        int right= intervals[0][1];
+
+        for (int i = 1; i < n; i++)
+        {
+            // 如果当前的右边界，够不到下一个的左边界，说明彻底断开了
+            if (right < intervals[i][0])
+            {
+                // 把攒好的口袋扎紧，扔进结果
+                result.push_back({ left ,right });
+                // 开一个新口袋
+                left = intervals[i][0];
+                right= intervals[i][1];
+            }
+            else
+            {
+                // 有重叠！把口袋的右边界尽量往外撑大
+                // 注意：由于已经排好序，新区间的 left 绝对大于等于当前的 left，所以不用管它
+                right = max(right, intervals[i][1]);
+            }
+        }
+        
+        // 别忘了把最后拿在手里、还没来得及扔进去的那个口袋收尾！
+        result.push_back({ left ,right });
+        
+        return result;
+    }
+};
+复杂度分析
+时间复杂度：O(NlogN)。因为我们加了一个 sort，排序的时间开销是 O(NlogN)，后面的 for 循环是线性的 O(N)。整体被排序的时间主导。
+
+空间复杂度：O(logN) 到 O(N)。取决于 C++ sort 函数底层所使用的栈空间（C++ 中通常是 Introsort），如果是原地排序，额外空间极小。我们用作答案返回的 result 数组通常不计入空间复杂度。
 */
 
-int cmpfunc(const void* a, const void* b)//无类型常量指针
-{
-    int** arr = (int**)a;
-    int** brr = (int**)b;
-    return (arr[0][0]> brr[0][0]);
-}
-
-int** merge(int** intervals, int intervalsSize, int* intervalsColSize, int* returnSize, int** returnColumnSizes) {
-    int** ans = (int**)malloc(sizeof(int*)* intervalsSize);//给ans争取最大的存储空间，保证存储数据时不会超出；
-    *returnColumnSizes = (int*)malloc(sizeof(int) * intervalsSize);//给returnColumnSizes争取最大的存储空间
-    for (int i = 0; i < intervalsSize; i++)
-    {
-        ans[i] = (int*)malloc(sizeof(int) * 2);
-        (*returnColumnSizes)[i] = 2;
-    }
-
-    qsort(intervals, intervalsSize,sizeof(intervals[0]), cmpfunc);//比较左边界
+//我的代码：
+class Solution {
+public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        int n = intervals.size();
+        vector<vector<int>> result;
+        if (n == 1) return intervals;
 
 
-    //添加第一个进ans
-    ans[0] = intervals[0];
-    int count = 1;
-    for (int i = 1; i < intervalsSize; i++)
-    {
-        if (intervals[i][0] > ans[count - 1][1])//表示独立
+        // 🌟 灵魂补丁：必须先按左端点升序排序！
+        // C++ 的 sort 默认比较 vector 的第一个元素，也就是刚好按照 starti 排序
+        sort(intervals.begin(), intervals.end());
+
+        int left = intervals[0][0];
+        int right= intervals[0][1];
+
+
+
+        for (int i = 1; i < n; i++)
         {
-            ans[count] = intervals[i];
-            count++;
+            if (right < intervals[i][0])
+            {
+                result.push_back({ left ,right });
+                left = intervals[i][0];
+                right= intervals[i][1];
+            }
+            else
+            {
+                right = max(right, intervals[i][1]);
+            }
         }
-        else//需要合并
-        {
-            ans[count - 1][1] = ans[count - 1][1] > intervals[i][1] ? ans[count - 1][1] : intervals[i][1];//更新右边界
-        }
+        result.push_back({ left ,right });
+        return result;
+
     }
-
-    *returnSize = count;
-    return ans;
-}
-
+};
 
