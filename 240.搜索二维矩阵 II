@@ -1,147 +1,121 @@
 /*
-240.搜索二维矩阵 II
-这里使用两种办法
-第一种是我自己手写的，先按照对角线进行查找，比较大小，在发现大于目标值时，再按列和按行查找
+很多人看到“排好序”，第一反应就是每行单独做一个二分查找，时间复杂度是 O(M log N)。面试官会对这个解法点点头，但紧接着就会问：“你能把时间复杂度降到 O(M + N) 吗？”
 
+要在 O(M + N) 的时间里找到目标，我们必须利用这个矩阵极其特殊的“地形”！
+
+1. 核心思维：把矩阵看成一棵“二叉搜索树” (BST)
+这道题最核心的破局点，在于“你一开始站在哪”。
+
+如果你站在左上角（最小值），往右走变大，往下走也变大。如果目标值比你大，你根本不知道该往右走还是往下走。右下角（最大值）同理。
+
+但是，如果你站在“右上角”呢？
+右上角的数字有一个极其魔幻的属性：
+
+它是这一行里的最大值（往左走，数字变小）。
+
+它是这一列里的最小值（往下走，数字变大）。
+
+这不就是一棵天然的二叉搜索树吗！
+以右上角的数字为根节点：
+
+想找更小的数？向左走（相当于二叉树的左子树）。
+
+想找更大的数？向下走（相当于二叉树的右子树）。
+
+2. 手工推演：化身“无情刺客”
+假设我们要找 target = 5，矩阵如下：
+
+Plaintext
+1   4   7  11
+2   5   8  12
+3   6   9  16
+我们直接空降到右上角，站在 11 的位置：
+
+当前是 11：11 > 5。目标太小了，这一列下面的数字比 11 还要大，绝对不可能有 5。果断往左走，整列淘汰！
+
+当前是 7：7 > 5。还是太大，下面全比 7 大。往左走，淘汰整列！
+
+当前是 4：4 < 5。目标比较大，这一行左边的数字比 4 还要小，绝对不可能有 5。果断往下走，整行淘汰！
+
+当前是 5：5 == 5。精准命中，直接返回 true！
+
+这就是传说中的“Z 字形查找”（或者叫削边法）。每次比较，都能极其霸道地淘汰掉“一整行”或“一整列”！
+
+3. C++ 满分极客代码
+逻辑清晰，代码极简，只要找准了右上角（或者左下角），这道题直接秒杀：
+
+C++
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        if (matrix.empty() || matrix[0].empty()) return false;
+
+        int m = matrix.size();
+        int n = matrix[0].size();
+
+        // 1. 空降右上角
+        int row = 0;
+        int col = n - 1;
+
+        // 2. 只要没有走出矩阵边界，就继续找
+        while (row < m && col >= 0) {
+            if (matrix[row][col] == target) {
+                return true; // 找到了！
+            } 
+            else if (matrix[row][col] > target) {
+                col--; // 当前值太大，向左走找更小的
+            } 
+            else {
+                row++; // 当前值太小，向下走找更大的
+            }
+        }
+
+        // 走到边界都没找到，说明矩阵里没有
+        return false;
+    }
+};
+4. 复杂度发生了怎样的质变？
+时间复杂度：O(M + N)。在最坏的情况下，你从右上角一路走到左下角，最多往下走 M 步，往左走 N 步。所以总步数绝对不会超过 M + N。这比每一行做二分查找的 O(M log N) 要快得多！
+
+空间复杂度：O(1)。只用了 row 和 col 两个变量记录坐标，零额外空间开销。
 
 */
-//第一种
-bool searchMatrix(int** matrix, int matrixSize, int* matrixColSize, int target) {
-    //分成三种情况 
 
-    if (matrixSize == *matrixColSize)//第一种 m=n
-    {
-        for (int i = 0; i < matrixSize; i++)
+//我的代码：
+class Solution {
+public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        if (matrix.empty() || matrix[0].empty()) return false;
+
+        int m = matrix.size();
+        int n = matrix[0].size();
+
+        int row = 0;
+        int col = n - 1;
+
+        while (row >= 0 && row < m && col >= 0 && col < n)
         {
-            if (matrix[i][i] >= target)
+            if (matrix[row][col] == target)
             {
-                for (int j = i; j >= 0; j--)//检查行
-                {
-                    if (matrix[i][j] == target)
-                    {
-                        return true;
-                    }
-                }
-                for (int j = i; j >= 0; j--)//检查列
-                {
-                    if (matrix[j][i] == target)
-                    {
-                        return true;
-                    }
-                }
-                
+                return true;
             }
+            else if (matrix[row][col] > target)
+            {
+                col--;
+            }
+            else
+            {
+                row++;
+            }
+
         }
+
         return false;
 
 
     }
-    else if (matrixSize > *matrixColSize)//第二种 m>n
-    {
-        for (int i = 0; i < *matrixColSize; i++)//检查有正方形中有没有
-        {
-            if (matrix[i][i] >= target)
-            {
-                for (int j = i; j >= 0; j--)//检查行
-                {
-                    if (matrix[i][j] == target)
-                    {
-                        return true;
-                    }
-                }
-                for (int j = i; j >= 0; j--)//检查列
-                {
-                    if (matrix[j][i] == target)
-                    {
-                        return true;
-                    }
-                }
-
-            }
-
-        }
-
-        for (int i = *matrixColSize; i < matrixSize; i++)//检查有正方形外有没有
-        {
-            if (matrix[i][*matrixColSize - 1] >= target)
-            {
-                for (int j = *matrixColSize - 1; j >= 0; j--)//检查行
-                {
-                    if (matrix[i][j] == target)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-        }
-        return false;
-
-    }
-    else//第三种 m<n
-    {
-        for (int i = 0; i < matrixSize; i++)//检查有正方形中有没有
-        {
-            if (matrix[i][i] >= target)
-            {
-                for (int j = i; j >= 0; j--)//检查行
-                {
-                    if (matrix[i][j] == target)
-                    {
-                        return true;
-                    }
-                }
-                for (int j = i; j >= 0; j--)//检查列
-                {
-                    if (matrix[j][i] == target)
-                    {
-                        return true;
-                    }
-                }
-
-            }
-
-        }
-
-        for (int i = matrixSize; i < *matrixColSize; i++)//检查有正方形外有没有
-        {
-            if (matrix[matrixSize-1][i] >= target)
-            {
-                for (int j = matrixSize - 1; j >= 0; j--)//检查行
-                {
-                    if (matrix[j][i] == target)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-        }
-        return false;
-    }
-
-}
-/*******************************************************************************************/
-//第二种
-bool searchMatrix(int** matrix, int matrixSize, int* matrixColSize, int target) {
-    if (matrix == NULL || matrixSize == 0 || *matrixColSize == 0) {
-        return false;
-    }
-
-    int row = 0;
-    int col = *matrixColSize - 1;
-
-    while (row < matrixSize && col >= 0) {
-        if (matrix[row][col] == target) {
-            return true;
-        } else if (matrix[row][col] > target) {
-            // 当前值太大，去掉当前列
-            col--;
-        } else {
-            // 当前值太小，去掉当前行
-            row++;
-        }
-    }
-
-    return false;
-}
+};
