@@ -1,38 +1,104 @@
 /*
-先把矩阵的元素按照对角线翻转一下，然后再逐列逆序
+这道题（LeetCode 48. 旋转图像）简直就是二维数组界的“魔法题”。
+
+如果在考场上，你试图一圈一圈、四个角互相替换着旋转，那你大概率会被 i, j, n - i - 1, n - j - 1 这些魔鬼下标折磨得痛不欲生，哪怕写出来了，也极容易越界或者死循环。
+
+但只要你稍微借用一点“线性代数（Linear Algebra）”的视角，这道需要原地旋转 90 度的 Hard 级别思维题，就会瞬间降维成两行代码的 Easy 题！
+
+1. 核心思维：降维打击的“两步走战略”
+顺时针旋转 90 度，其实在数学上等价于两个极其简单的基础对称操作：
+第一步：沿“主对角线”对称翻转（矩阵转置）。
+第二步：沿“垂直中轴线”左右翻转（每行翻转）。
+
+2. 手工推演：感受数学的暴力美学
+假设我们有一个 3×3 的矩阵：
+
+Plaintext
+1  2  3
+4  5  6
+7  8  9
+第一步：沿主对角线（1-5-9）翻转
+把左下角的元素和右上角的元素互换（也就是 matrix[i][j] 和 matrix[j][i] 互换）。
+翻转后，矩阵变成了：
+
+Plaintext
+1  4  7
+2  5  8
+3  6  9
+第二步：逐行左右翻转
+把第一行 [1, 4, 7] 翻转成 [7, 4, 1]。
+把第二行 [2, 5, 8] 翻转成 [8, 5, 2]。
+把第三行 [3, 6, 9] 翻转成 [9, 6, 3]。
+
+最终矩阵变成了：
+
+Plaintext
+7  4  1
+8  5  2
+9  6  3
+你仔细看看这个最终结果，这不就是原矩阵顺时针旋转了 90 度吗！ 简直像变魔术一样神奇，完全不需要去抠那些恶心的四个角旋转下标！
+
+3. C++ 满分极客代码
+借助 C++ 的内置 swap 和 reverse 函数，代码写出来干净利落，面试官挑不出一点毛病：
+
+C++
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+
+        // 1. 沿主对角线转置矩阵
+        for (int i = 0; i < n; i++) {
+            // 注意：j 必须从 i + 1 开始！
+            // 如果从 0 开始，元素会被翻转两次，又变回原样了！
+            for (int j = i + 1; j < n; j++) {
+                swap(matrix[i][j], matrix[j][i]);
+            }
+        }
+
+        // 2. 逐行进行水平翻转
+        for (int i = 0; i < n; i++) {
+            reverse(matrix[i].begin(), matrix[i].end());
+        }
+    }
+};
+4. 复杂度发生了怎样的质变？
+时间复杂度：O(N²)。第一步转置遍历了半个矩阵（约 N²/2 次操作），第二步翻转遍历了整个矩阵的一半（也是 N²/2 次操作），加起来刚好是 O(N²)，达到了读取每个元素的最优理论极限。
+
+空间复杂度：绝对的 O(1)。全都在原矩阵上进行 swap 操作，没有申请任何新的二维数组！
+
+💡 面试官的夺命追问：“如果是逆时针旋转 90 度呢？”
+既然顺时针是“先主对角线翻转，再左右翻转”，那么逆时针 90 度呢？
+毫不犹豫地回答他：“先沿主对角线翻转，再上下翻转！” （或者“先左右翻转，再主对角线翻转”）。
+这个套路一通百通！
+
+
 */
 
-void rotate(int** matrix, int matrixSize, int* matrixColSize) {
-    
-    int a =  -1;
-    int b =  -1;
-    int c = matrixSize-1;
-    //1.使用对角线翻转
-    for (int i = 0; i < matrixSize ; i++)
-    {
-        for (int j = 0; j < *matrixColSize- i-1; j++)
+//我的代码：
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+
+
+        for (int i = 0; i < n; i++)//关于对称轴翻转
         {
-            int temp = matrix[i][j];
-            int x = i - 2 * a * (a * i + b * j + c) / (a * a + b * b); //求关于对角线对称的坐标
-            int y = j - 2 * b * (a * i + b * j + c) / (a * a + b * b);
-            matrix[i][j] = matrix[x][y];
-            matrix[x][y] = temp;
+            for (int j = i + 1; j < n; j++)
+            {
+                swap(matrix[i][j], matrix[j][i]);
+            }
+        }
+
+        for (int i = 0; i < n; i++)//每行翻转
+        {
+            reverse(matrix[i].begin(), matrix[i].end());
         }
 
     }
-
-
-    //2.每列倒叙
-    for (int i = 0; i < *matrixColSize; i++)
-    {
-        for (int j = 0; j < matrixSize/2; j++)
-        {
-            int temp = matrix[j][i];
-            matrix[j][i] = matrix[matrixSize - 1 - j][i];
-            matrix[matrixSize - 1 - j][i] = temp;
-        }
-
-
-    }
-
-}
+};
