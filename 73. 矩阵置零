@@ -1,44 +1,208 @@
 /*
-73. 矩阵置零
-给定一个 m x n 的矩阵，如果一个元素为 0 ，则将其所在行和列的所有元素都设为 0 。请使用 原地 算法
+在面试中，这道题（LeetCode 73. 矩阵置零）的难点根本不在于怎么把数字变成 0，而在于面试官会像挤海绵一样，一点点榨干你的内存空间。
+
+青铜解法（O(M×N) 空间）：老老实实再建一个一样大的矩阵，照着抄。
+
+白银解法（O(M+N) 空间）：建两个一维数组，一个记录哪行该清零，一个记录哪列该清零。很多人能想到这一步，但面试官会摇摇头说：“还能再省点吗？”
+
+王者解法（绝对的 O(1) 空间）：没有额外的记事本？那我们就把矩阵自己的第一行和第一列，残忍地改造成我们的记事本！
+
+1. 核心思维：把第一行和第一列当“记事本”
+如果我们把第一行和第一列用来做标记：
+当我们在矩阵内部（不包含第一行和第一列）扫描时，如果发现 matrix[i][j] == 0，我们就毫不犹豫地把这一行的头（matrix[i][0]）和这一列的头（matrix[0][j]）贴上封条（设为 0）。
+
+🚨 致命的“套娃陷阱”：
+如果你直接这么做，会引发一场极其惨烈的灾难！
+假设第一行原本没有 0，但矩阵内部有个 0，你为了做标记，把第一行的某个数字变成了 0。结果等会儿清零的时候，程序看到第一行有 0，把整个第一行全都清零了！这就是典型的“误杀”。
+
+破局战术（先保护，再改造）：
+
+先派两个间谍（布尔变量）：先把第一行和第一列独立审视一遍。如果第一行原本就有 0，记下 row0_flag = true；如果第一列原本就有 0，记下 col0_flag = true。它们俩的命运已经被提前锁定，后面随便怎么改都不怕了。
+
+疯狂改造记事本：从第 1 行、第 1 列开始遍历整个矩阵。遇到 0，就把对应的第一行和第一列的位置设为 0。
+
+按图索骥，大开杀戒：再次遍历矩阵内部（从第 1 行、第 1 列开始）。只要它对应的第一行或者第一列的头上是 0，这个数字就连坐，变成 0。
+
+秋后算账：根据最开始那两个间谍的情报，如果第一行原本有 0，就把整个第一行全部屠掉；第一列同理。
+
+2. C++ 满分极客代码
+这段代码的逻辑极其严密，层层推进，是典型的工业级防御性编程：
+
+C++
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int m = matrix.size();
+        int n = matrix[0].size();
+        
+        bool row0_flag = false; // 第一行原本有没有 0？
+        bool col0_flag = false; // 第一列原本有没有 0？
+
+        // 1. 提前打探情报：第一列有没有 0？
+        for (int i = 0; i < m; i++) {
+            if (matrix[i][0] == 0) {
+                col0_flag = true;
+                break;
+            }
+        }
+        
+        // 1. 提前打探情报：第一行有没有 0？
+        for (int j = 0; j < n; j++) {
+            if (matrix[0][j] == 0) {
+                row0_flag = true;
+                break;
+            }
+        }
+
+        // 2. 把第一行和第一列当做记事本，扫描内部矩阵（从下标 1 开始）
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][j] == 0) {
+                    matrix[i][0] = 0; // 给这行打标记
+                    matrix[0][j] = 0; // 给这列打标记
+                }
+            }
+        }
+
+        // 3. 根据记事本上的标记，把内部矩阵的对应元素清零
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][0] == 0 || matrix[0][j] == 0) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+
+        // 4. 秋后算账：处理最特殊的“记事本”自己
+        if (row0_flag) {
+            for (int j = 0; j < n; j++) {
+                matrix[0][j] = 0;
+            }
+        }
+        if (col0_flag) {
+            for (int i = 0; i < m; i++) {
+                matrix[i][0] = 0;
+            }
+        }
+    }
+};
+3. 复杂度分析
+时间复杂度：O(M×N)。我们把整个矩阵遍历了大概两遍半，系数是常数，完全满足 O(M×N) 的最优时间。
+
+空间复杂度：绝对的 O(1)。我们仅仅用了 row0_flag 和 col0_flag 两个布尔变量，把矩阵原本的存储空间压榨到了极致。
+
+🏆 顿悟时刻
+这种“拿原数据空间当标志位”的做法，其实和你在做“缺失的第一个正数（原地哈希）”时的思维如出一辙！只要你能保证“借用空间”的行为不会破坏掉你未来还需要读取的数据，你就可以在原数组/矩阵里为所欲为。
 */
 
-void setZeroes(int** matrix, int matrixSize, int* matrixColSize) {
-    int* map = (int*)malloc(sizeof(int) * (matrixSize + *matrixColSize));
 
-    for (int i = 0; i < matrixSize; i++)//扫描行
-    {
-        for (int j = 0; j < *matrixColSize; j++)//扫描每一行的内容，代表列
-        {
-            if (0 == matrix[i][j])
-            {
-                map[i] = 1;
-                map[j+ matrixSize] = 1;
-            }
+//笔记本的代码：
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int m = matrix.size();
+        int n = matrix[0].size();
+        
+        bool row0_flag = false; // 第一行原本有没有 0？
+        bool col0_flag = false; // 第一列原本有没有 0？
 
-        }
-    }
-
-    for (int i = 0; i < matrixSize; i++)//行清零
-    {
-        if (map[i] == 1)
-        {
-            for (int j = 0; j < *matrixColSize; j++)
-            {
-                matrix[i][j] = 0;
+        // 1. 提前打探情报：第一列有没有 0？
+        for (int i = 0; i < m; i++) {
+            if (matrix[i][0] == 0) {
+                col0_flag = true;
+                break;
             }
         }
-    }
+        
+        // 1. 提前打探情报：第一行有没有 0？
+        for (int j = 0; j < n; j++) {
+            if (matrix[0][j] == 0) {
+                row0_flag = true;
+                break;
+            }
+        }
 
-    for (int i = matrixSize; i < *matrixColSize+ matrixSize; i++)//列清零
-    {
-        if (map[i] == 1)
-        {
-            for (int j = 0; j < matrixSize; j++)
-            {
-                matrix[j][i- matrixSize] = 0;
+        // 2. 把第一行和第一列当做记事本，扫描内部矩阵（从下标 1 开始）
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][j] == 0) {
+                    matrix[i][0] = 0; // 给这行打标记
+                    matrix[0][j] = 0; // 给这列打标记
+                }
+            }
+        }
+
+        // 3. 根据记事本上的标记，把内部矩阵的对应元素清零
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][0] == 0 || matrix[0][j] == 0) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+
+        // 4. 秋后算账：处理最特殊的“记事本”自己
+        if (row0_flag) {
+            for (int j = 0; j < n; j++) {
+                matrix[0][j] = 0;
+            }
+        }
+        if (col0_flag) {
+            for (int i = 0; i < m; i++) {
+                matrix[i][0] = 0;
             }
         }
     }
+};
 
-}
+
+
+//m+n的解题代码：
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int m = matrix.size();
+        int n = matrix[0].size();
+
+        vector<int> map(m + n, 0);
+
+        for (int i = 0; i < m; i++)//标记要清零的行列
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (matrix[i][j] == 0)
+                {
+                    map[i] = 1;
+                    map[m + j] = 1;
+                }
+            }
+        }
+
+        for (int i = 0; i < m ; i++)//行清零
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (map[i] == 1)
+                {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+
+        for (int i = m; i < m+n; i++)//列清零
+        {
+            for (int j = 0; j < m; j++)
+            {
+                if (map[i] == 1)
+                {
+                    matrix[j][i-m] = 0;
+                }
+            }
+        }
+
+    }
+};
