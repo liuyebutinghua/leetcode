@@ -1,66 +1,161 @@
-int* spiralOrder(int** matrix, int matrixSize, int* matrixColSize, int* returnSize) {
-    
-       int l = 1;//左边界
-   int r = *matrixColSize;//右边界
-   int u = 1;//上边界
-   int b = matrixSize;//下边界
+/*
+解题思路：
 
-   int cnt = 0;
+它不需要你懂什么哈希表、前缀和、单调栈等高深的数据结构。它完完全全只考验你一件事：你对代码边界的掌控力到底有多强？
+很多候选人脑子里非常清楚该怎么转圈，但一写代码，不是越界报错，就是陷入死循环，或者在最中间的元素上重复打印。
 
-   int* result = (int*)malloc(sizeof(int)* matrixSize*(*matrixColSize));
-   //阅读顺序    左->右   上->下   右->左   下->上
+只要你掌握了“四面楚歌（边界收缩法）”，这道题你不仅能写对，而且能写得像诗一样工整。
 
-   while (1)
-   {
-       // 左->右
-       for (int i = l - 1; i < r; i++)
-       {
-           result[cnt] = matrix[u-1][i];
-           cnt++;
-       }
-       u++;        //    l=1 r=4 u=2 b=3
-       if (u > b)
-       {
-           break;
-       }
+1. 核心思维：像剥洋葱一样收缩边界
+想象一台扫地机器人，它要沿着房间的四周边缘打扫。每打扫完一条边，它就把这条边对应的“墙壁”往里推一格，直到所有的墙壁挤在一起，房间打扫完毕。
 
-       // 上->下
-       for (int i = u - 1; i < b; i++)
-       {
-           result[cnt] = matrix[i][r-1];
-           cnt++;
-       }
-       r--;    //    l=1 r=3 u=2 b=3
-       if (l > r)
-       {
-           break;
-       }
+我们需要定义四堵墙（四个变量）：
+
+top（上边界，初始为 0）
+
+bottom（下边界，初始为 m - 1）
+
+left（左边界，初始为 0）
+
+right（右边界，初始为 n - 1）
+
+扫地机器人的行动路线（死规律）：
+
+向右走：贴着 top 墙，从 left 走到 right。走完之后，上墙往下压（top++）。
+
+向下走：贴着 right 墙，从 top 走到 bottom。走完之后，右墙往左压（right--）。
+
+向左走：贴着 bottom 墙，从 right 走到 left。走完之后，下墙往上压（bottom--）。
+
+向上走：贴着 left 墙，从 bottom 走到 top。走完之后，左墙往右压（left++）。
+
+就这样一直循环，直到所有的数字都被扫进结果数组里。
+
+2. 🚨 极其致命的“扁平矩阵”陷阱
+如果矩阵是一个完美的正方形（比如 3×3），上面那套逻辑无懈可击。
+但如果矩阵是扁平的（比如 3×4）呢？
+
+当洋葱剥到最里面的一层时，它可能只剩下一行或者一列了！
+这时候扫地机器人“向右走”和“向下走”都没问题，但准备“向左走”时，因为上墙和下墙可能已经错位重叠了，如果不加判断直接往回走，就会把刚刚扫过的同一行数字再倒着扫一遍！
+
+破局战术：
+在完成“向右”和“向下”之后，准备“折返”（向左、向上）之前，必须检查一下上下墙、左右墙有没有撞在一起交错！ 如果交错了，说明洋葱已经剥完了，直接退出！
+
+3. C++ 满分极客代码
+这段代码的结构极度对称，读起来非常丝滑，可以说是大厂面试官最喜欢看到的标准写法：
+
+C++
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<int> result;
+        if (matrix.empty() || matrix[0].empty()) return result;
+
+        int top = 0;
+        int bottom = matrix.size() - 1;
+        int left = 0;
+        int right = matrix[0].size() - 1;
+
+        // 只要上下墙、左右墙还没有互相穿透，就继续转圈
+        while (top <= bottom && left <= right) {
+            
+            // 1. 贴着上墙，向右走
+            for (int j = left; j <= right; j++) {
+                result.push_back(matrix[top][j]);
+            }
+            top++; // 上墙往下压
+
+            // 2. 贴着右墙，向下走
+            for (int i = top; i <= bottom; i++) {
+                result.push_back(matrix[i][right]);
+            }
+            right--; // 右墙往左压
+
+            // 🚨 致命陷阱拦截：检查墙壁是否已经交错
+            // 如果交错了，说明中间只剩单行或单列，剥洋葱结束！
+            if (top > bottom || left > right) {
+                break;
+            }
+
+            // 3. 贴着下墙，向左走
+            for (int j = right; j >= left; j--) {
+                result.push_back(matrix[bottom][j]);
+            }
+            bottom--; // 下墙往上压
+
+            // 4. 贴着左墙，向上走
+            for (int i = bottom; i >= top; i--) {
+                result.push_back(matrix[i][left]);
+            }
+            left++; // 左墙往右压
+        }
+
+        return result;
+    }
+};
+4. 复杂度分析
+时间复杂度：O(M×N)。矩阵里的每一个数字被精准地且仅被访问了一次。
+
+空间复杂度：O(1)。除了作为答案返回的 result 数组，我们只用了 4 个整型变量来控制墙壁的边界，完美符合空间压榨的要求。
+
+🏆 顿悟时刻
+你看，解决复杂的二维运动轨迹，最优雅的方式就是设置边界变量。只要边界控制得好，循环里的代码哪怕再长，也不会出现一丝越界的风险。
+*/
+
+//我的代码：
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        int m = matrix.size();
+        int n= matrix[0].size();
+
+        int shang = 0;
+        int xia = m - 1;
+        int left = 0;
+        int right = n - 1;
+
+        vector<int> result;
+
+        while (shang <= xia && left <= right)
+        {
+            for (int i = left; i <= right; i++)//向右走
+            {
+                result.push_back(matrix[shang][i]);
+            }
+            shang++;
 
 
-       //  右->左
-       for (int i = r - 1; i >= l-1; i--)
-       {
-           result[cnt] = matrix[b-1][i];
-           cnt++;
-       }
-       b--;     //    l=1 r=3 u=2 b=2
-       if (u > b)
-       {
-           break;
-       }
+            for (int i = shang; i <= xia; i++)//向下走
+            {
+                result.push_back(matrix[i][right]);
+            }
+            right--;
 
-       //  下->上
-       for (int i = b - 1; i >= u-1; i--)
-       {
-           result[cnt] = matrix[i][l-1];
-           cnt++;
-       }
-       l++;    //    l=1 r=3 u=2 b=2
-       if (l > r)
-       {
-           break;
-       }
-   }
-   * returnSize=cnt--;
-   return result;
-}
+            
+            if (shang > xia || left > right)
+            {
+                break;
+            }
+
+            for (int i = right; i >= left; i--)//向左走
+            {
+                result.push_back(matrix[xia][i]);
+            }
+            xia--;
+
+            for (int i = xia; i >= shang; i--)//向上走
+            {
+                result.push_back(matrix[i][left]);
+            }
+            left++;
+
+
+        }
+        return result;
+    }
+};
+
