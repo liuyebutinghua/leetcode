@@ -1,34 +1,92 @@
 /*
-最终使用官方的方法进行的解题
 
-使用双指针
+这道题（LeetCode 160. 相交链表）是链表双指针领域的绝对启蒙神题。在算法圈子里，这道题有一个极其浪漫的解法名字：“错过，是为了更好的相遇”。
 
-链表 headA 和 headB 的长度分别是 m 和 n。考虑当 m=n 和 m=n 时，两个指针分别会如何移动：
+在数组里，你可以随意通过下标 nums[i] 闪现到任何位置；但在链表里，你只能像摸石头过河一样，顺着 next 指针一步一步往下走。如果两个链表不一样长，两个指针一起出发，绝对会完美错过交点。
 
-如果 m=n，则两个指针会同时到达两个链表的尾节点，然后同时变成空值 null，此时返回 null；
+怎么在 O(1) 的空间下，抹平这种长度差？
 
-如果 m=n，则由于两个链表没有公共节点，两个指针也不会同时到达两个链表的尾节点，因此两个指针都会遍历完两个链表，在指针 pA 移动了 m+n 次、指针 pB 移动了 n+m 次之后，两个指针会同时变成空值 null，此时返回 null
+1. 核心思维：走过你走过的路
+假设链表 A 的长度是 a+c（a 是独立部分，c 是相交后的公共部分）。
+假设链表 B 的长度是 b+c（b 是独立部分，c 是公共部分）。
+因为 a 和 b 不一定相等，所以两个指针直接走绝对碰不到一起。
 
-作者：力扣官方题解
-链接：https://leetcode.cn/problems/intersection-of-two-linked-lists/solutions/811625/xiang-jiao-lian-biao-by-leetcode-solutio-a8jn/
-来源：力扣（LeetCode）
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+破局战术：拼图魔法！
+我们派出两个指针 pA 和 pB，分别从两个链表的头节点出发，每次走一步。
 
-备注：
-1.对当前的节点进行比较
-2.链表最后的NULL  不可以忽略，是遍历结束的标志
+当 pA 走到了链表 A 的尽头（null），我们不要让它停下，直接把它按到链表 B 的头上继续走！
+
+同理，当 pB 走到了链表 B 的尽头（null），我们把它按到链表 A 的头上继续走！
+
+奇迹发生了：
+
+pA 走过的总路程是：a+c+b
+
+pB 走过的总路程是：b+c+a
+因为 a+c+b=b+c+a，这意味着：经过拼接后，两个指针走过的路程变得绝对等长！
+所以，它们一定会同时到达那个相交的起始节点！
+
+那如果没有交点怎么办？
+没有交点的话，c=0。pA 走了 a+b，pB 走了 b+a。它们会同时走到对方链表的终点，也就是同时变成 null，依然能跳出循环，完美返回 null。
+
+2. C++ 满分极客代码
+领悟了这个浪漫的逻辑后，写出来的代码连 10 行都不到，干净得像一首诗：
+
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode *getIntersectionNode(ListNode *headA, ListNode *headB) {
+        // 如果有一个链表是空的，绝对不可能相交
+        if (headA == nullptr || headB == nullptr) return nullptr;
+
+        ListNode *pA = headA;
+        ListNode *pB = headB;
+
+        // 只要两人还没相遇（没走到同一个节点），就继续走
+        while (pA != pB) {
+            // pA 走到了尽头，就跳到 B 的头上；否则继续往下走
+            pA = (pA == nullptr) ? headB : pA->next;
+            
+            // pB 走到了尽头，就跳到 A 的头上；否则继续往下走
+            pB = (pB == nullptr) ? headA : pB->next;
+        }
+
+        // 相遇时，pA 就是交点（如果没有交点，pA 此时正好是 nullptr）
+        return pA;
+    }
+};
+3. 复杂度分析
+时间复杂度：O(M+N)。其中 M 和 N 分别是两个链表的长度。两个指针最多都只把两个链表各走了一遍。
+
+空间复杂度：O(1)。全场只用了 pA 和 pB 两个指针，完全符合题目要求的常数级额外空间。
+
+
 */
+//我的代码：
+class Solution {
+public:
+    ListNode* getIntersectionNode(ListNode* headA, ListNode* headB) {
+
+        ListNode* pa = headA;
+        ListNode* pb = headB;
 
 
-struct ListNode* getIntersectionNode(struct ListNode* headA, struct ListNode* headB) {
-    if (headA == NULL || headB == NULL) {
-        return NULL;
+        while (pa != pb)
+        {
+            pa = pa == nullptr? headB:pa->next;
+            pb = pb == nullptr ? headA : pb->next;
+        }
+
+        return pa;
     }
-    struct ListNode* pA = headA, * pB = headB;
-    while (pA != pB) {
-        pA = pA == NULL ? headB : pA->next;
-        pB = pB == NULL ? headA : pB->next;
-    }
-    return pA;
-}
+};
+
 
