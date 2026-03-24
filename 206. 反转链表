@@ -1,3 +1,99 @@
+/*
+很多人刚学链表时，脑子里想得清清楚楚：“把箭头掉个头不就行了吗？”
+结果一写代码，写下 curr->next = prev 的瞬间，发现链表后面的节点全部失联了，程序直接崩溃。
+
+这道题唯一的难点，就在于如何在“斩断旧情”之前，先给自己“留条后路”。
+
+1. 核心思维：斩断前缘的“四步交谊舞”
+在链表里，指针就是唯一的生命线。一旦你把当前节点的 next 指向了前一个节点，你就再也找不到原来的下一个节点了。
+
+破局战术：我们需要三个指针来打配合！
+
+prev（前驱节点）：一开始是 nullptr（因为反转后，原本的头节点会变成尾节点，它的下一个绝对是空）。
+
+curr（当前节点）：一开始站在 head 上。
+
+next_temp（探路先锋）：专门用来记住 curr 原本的下一个节点在哪里。
+
+极其固定的四步循环：
+
+留后路：让 next_temp 记住 curr->next 的位置。
+
+斩断旧情，回头：把 curr->next 狠心指向 prev。
+
+前驱节点跟上：prev 往前挪一步，来到 curr 的位置。
+
+当前节点继续往前：curr 顺着刚刚留的后路（next_temp），往前挪一步。
+
+就这样一步一步往前推，直到 curr 走到了尽头（nullptr）。此时，prev 刚好停在原链表的最后一个节点上，而它，就是我们反转后的新头节点！
+
+2. C++ 满分工业级代码
+只要你心里默念那“四步交谊舞”，这段代码你闭着眼睛都能默写出来：
+
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+        ListNode* prev = nullptr; // 充当新链表的尾巴（空指针）
+        ListNode* curr = head;    // 从老链表的头开始遍历
+
+        while (curr != nullptr) {
+            // 1. 留后路：保存下一个节点的地址
+            ListNode* next_temp = curr->next; 
+            
+            // 2. 掉头：斩断原本向前的指针，指向前一个节点
+            curr->next = prev; 
+            
+            // 3. prev 往前走
+            prev = curr; 
+            
+            // 4. curr 往前走
+            curr = next_temp; 
+        }
+
+        // 循环结束时，curr 指向了 nullptr，而 prev 正好停在新链表的头节点上
+        return prev; 
+    }
+};
+3. 复杂度分析
+时间复杂度：O(N)。其中 N 是链表的长度。我们只把链表从头到尾扫了一遍，每个节点操作了一次。
+
+空间复杂度：O(1)。全场只用了 prev、curr 和 next_temp 三个临时指针变量，没有任何额外的内存开销。
+*/
+
+
+
+//我的代码：
+class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+        ListNode* prev = nullptr;
+        ListNode* curr = head;
+
+        while (curr != nullptr)
+        {
+            ListNode* next_curr = curr->next;
+            curr->next = prev;
+            prev = curr;
+            curr = next_curr;
+        }
+
+        return prev;
+
+    }
+};
+
+
 struct ListNode* reverseList(struct ListNode* head) {
 
     struct ListNode new_head, * p = head, * q;
