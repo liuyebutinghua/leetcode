@@ -1,311 +1,210 @@
-// 方法一：迭代法（推荐）
-struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
-    // 创建虚拟头节点
-    struct ListNode dummy;
-    dummy.next = NULL;
-    struct ListNode* current = &dummy;  // 当前节点指针
+/*
+1.迭代法：
 
-    while (list1 != NULL && list2 != NULL)   //利用虚拟头部，完成链表从小到大排列，直到有一个链表到头
-    {
-        if (list1->val <= list2->val)
+这道题虽然标着“简单”，但它在面试中的出现频率极高。它不考你什么高深的算法，纯粹考察你的“代码洁癖”和“指针微操能力”。
+
+很多新手写这道题时，为了处理“到底谁来当新链表的头节点”这个问题，会写出一堆又臭又长的 if-else。
+但在高级程序员眼里，这道题只需要请出一个链表界的绝对真神：“虚拟头节点”（Dummy Node / 哨兵节点），一切边界问题瞬间灰飞烟灭！
+
+1. 核心思维：拉链法与“无敌哨兵”
+想象你面前有两队已经按身高排好序的小朋友（两个有序链表）。你现在要做的，就是像拉拉链一样，每次比较两队排在最前面的小朋友，谁更矮，就让他出列，站到新队伍的末尾。
+
+🚨 痛点：新队伍的第一个人到底是谁？
+如果你直接在原链表上操作，你必须先小心翼翼地比较 list1 和 list2 的头节点，选一个较小的作为新头节点，然后再开始循环。这不仅容易越界，代码还极其难看。
+
+🌟 破局战术：凭空造一个“虚拟头节点（Dummy）”
+我们直接在内存里 new 一个毫无意义的节点，把它当作新队伍的“排头兵”（占位符）。
+然后我们派出一个工作指针 curr，一开始让它站在 dummy 上。
+接下来，不管是 list1 还是 list2，谁小，我们就把 curr->next 连向谁，然后 curr 往前走一步。
+
+等两队比较完之后，真正的新链表头节点，其实就是 dummy->next！ 极其优雅，绝不拖泥带水！
+
+2. C++ 满分工业级代码
+在 C++ 中写链表题，如果你能在最后把借来的 dummy 节点释放掉（delete），面试官会立刻觉得你是一个基本功极其扎实、对内存安全极其敏感的高手：
+
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        // 1. 请出无敌哨兵：创建一个虚拟头节点
+        ListNode* dummy = new ListNode(-1); 
+        ListNode* curr = dummy; // curr 是帮我们在新链表上穿针引线的“缝纫机”指针
+
+        // 2. 像拉拉链一样，两个指针相向而行，每次挑小的连上去
+        while (list1 != nullptr && list2 != nullptr) {
+            if (list1->val <= list2->val) {
+                curr->next = list1; // 把 list1 连过来
+                list1 = list1->next; // list1 往后退一步
+            } else {
+                curr->next = list2; // 把 list2 连过来
+                list2 = list2->next; // list2 往后退一步
+            }
+            curr = curr->next; // 缝纫机指针也跟着往前走一步，准备接下一个
+        }
+
+        // 3. 扫尾工作：如果有哪一队先走完了，另一队肯定还有剩下的人
+        // 因为原本就是有序的，所以我们直接把剩下那一长串一鼓作气“全盘接盘”！
+        if (list1 != nullptr) {
+            curr->next = list1;
+        } else {
+            curr->next = list2;
+        }
+
+        // 4. 获取真正的新头节点
+        ListNode* realHead = dummy->next;
+
+        // 5. 🌟 展现职业素养：把借来的 dummy 节点还给系统，防止内存泄漏
+        delete dummy; 
+
+        return realHead;
+    }
+};
+3. 复杂度发生了怎样的质变？
+时间复杂度：O(M+N)。其中 M 和 N 分别是两个链表的长度。我们最多把两个链表里的每个节点都过了一遍。
+
+空间复杂度：绝对的 O(1)。我们没有去创建任何新的节点来存储数据（dummy 只是一个临时的打桩机），全程都在原链表的节点上“断开旧指针，接上新指针”，把内存压榨到了极限。
+
+*/
+//我的代码：
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+
+        ListNode dummy(0);
+
+        ListNode* curr = &dummy;
+        
+        while (list1 != nullptr && list2 != nullptr)
         {
-            current->next = list1;
-            list1 = list1->next;
+            if (list1->val < list2->val)//list1小，先接list1
+            {
+                curr->next = list1;
+                list1 = list1->next;
+            }
+            else
+            {
+                curr->next = list2;
+                list2 = list2->next;
+            }
+
+            curr = curr->next;
+        }
+
+        if (list1 == nullptr)
+        {
+            curr->next = list2;
         }
         else
         {
-            current->next = list2;
-            list2 = list2->next;
+            curr->next = list1;
         }
-        current = current->next;
+
+        return dummy.next;
     }
-    //防止有链表没有被遍历完，把剩余部分直接链接在后面
-    if (list1 != NULL)
-    {
-        current->next = list1;
-    }
-    if (list2 != NULL)
-    {
-        current->next = list2;
-    }
-
-    return dummy.next;
-}
+};
 
 
-
-
-// 方法二：递归法
-struct ListNode* mergeTwoListsRecursive(struct ListNode* list1, struct ListNode* list2) {
-    // 基础情况
-    if (list1 == NULL) return list2;
-    if (list2 == NULL) return list1;
-    
-    // 递归情况
-    if (list1->val <= list2->val) {
-        list1->next = mergeTwoListsRecursive(list1->next, list2);
-        return list1;
-    } else {
-        list2->next = mergeTwoListsRecursive(list1, list2->next);
-        return list2;
-    }
-}
 
 /*
-# 递归思维完全指南
+第二种方法：
+递归法：
 
-## 1. 递归的本质：相信函数能解决问题
+既然你再次把这道题端了上来，作为对你算法思维的拓展，我必须给你展示一下这道题的第二种“神仙”解法 —— 递归（Recursion）！
 
-### 核心思想
-递归就是：**把大问题分解成同类型的小问题，然后相信函数能解决小问题**
+如果在面试中，你写完迭代版本后，面试官微笑着问你：“代码写得很棒，那你能用递归再写一版吗？”
+这时候，如果你能掏出下面这套逻辑，绝对能让他对你的代码审美刮目相看。
 
-```c
-// 合并链表的递归思维：
-// 大问题：合并两个链表
-// 小问题：选择一个较小的头节点，然后合并剩下的部分
-// 相信：mergeTwoLists函数能正确合并剩下的部分
-```
+1. 核心思维：把麻烦“甩锅”给未来
+递归的本质，其实就是“找规律 + 甩锅”。
+我们看着 list1 和 list2 的两个头节点，只需要做一个极其简单的决定：谁更小，谁就当新链表的老大！
 
-### 递归三要素
+假设 list1 的头节点更小，那么 list1 当老大。
+剩下的事情怎么办？list1 后面的节点该怎么排？
+我们根本不需要自己去排！我们只需要把 list1->next 和整个 list2 重新扔给合并函数自己，让它们俩继续去争个高低，然后把最终赢家的队伍，直接接在 list1 的屁股后面就行了！
 
-#### 1. 递归终止条件（Base Case）
-```c
-// 什么时候不需要再递归了？
-if (list1 == NULL) return list2;  // 一个链表为空，返回另一个
-if (list2 == NULL) return list1;
-```
+极其简单的三大逻辑分支：
 
-#### 2. 本层要做什么（Current Level）
-```c
-// 当前这一层需要做什么决定？
-if (list1->val <= list2->val) {
-    // 选择list1作为头节点
-} else {
-    // 选择list2作为头节点
-}
-```
+保底防线 1：如果 list1 没人了（空了），直接让 list2 全盘接手。
 
-#### 3. 递归调用（Recursive Call）
-```c
-// 把剩下的问题交给函数自己处理
-list1->next = mergeTwoLists(list1->next, list2);
-```
+保底防线 2：如果 list2 没人了，直接让 list1 全盘接手。
 
-## 2. 递归的思维步骤
+甩锅大法：如果 list1->val < list2->val，list1 留下，它的 next 指向 merge(list1->next, list2)；否则反之。
 
-### 步骤1：定义函数功能
-```c
-// 函数功能：输入两个有序链表，返回合并后的有序链表
-struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2)
-```
+2. C++ 满分极客代码（极致优雅）
+这段代码没有任何多余的指针操作，甚至连 dummy 节点都不需要，短到只有十来行，简直就是一件艺术品：
 
-### 步骤2：找最简单情况
-```
-最简单情况1：list1为空 → 返回list2
-最简单情况2：list2为空 → 返回list1
-```
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        // 1. 保底防线：如果有一方已经空了，直接连上另一方剩下的全部
+        if (list1 == nullptr) return list2;
+        if (list2 == nullptr) return list1;
 
-### 步骤3：相信函数能力
-```
-假设mergeTwoLists函数已经能正确工作
-那么mergeTwoLists(list1->next, list2)一定能返回正确结果
-```
-
-### 步骤4：处理当前层
-```
-我只需要决定：谁做头节点？
-较小的那个！然后把它的next指向递归结果
-```
-
-## 3. 递归执行过程图解
-
-### 示例：合并[1,2,4]和[1,3,4]
-
-```
-调用: mergeTwoLists([1,2,4], [1,3,4])
-├── 比较 1 <= 1，选择第一个1
-├── 返回 1 -> mergeTwoLists([2,4], [1,3,4])
-    ├── 比较 2 > 1，选择1
-    ├── 返回 1 -> mergeTwoLists([2,4], [3,4])
-        ├── 比较 2 < 3，选择2
-        ├── 返回 2 -> mergeTwoLists([4], [3,4])
-            ├── 比较 4 > 3，选择3
-            ├── 返回 3 -> mergeTwoLists([4], [4])
-                ├── 比较 4 <= 4，选择第一个4
-                ├── 返回 4 -> mergeTwoLists([], [4])
-                    └── 返回 [4]  // 基础情况
-                └── 结果: 4 -> [4] = [4,4]
-            └── 结果: 3 -> [4,4] = [3,4,4]
-        └── 结果: 2 -> [3,4,4] = [2,3,4,4]
-    └── 结果: 1 -> [2,3,4,4] = [1,2,3,4,4]
-└── 结果: 1 -> [1,2,3,4,4] = [1,1,2,3,4,4]
-```
-
-## 4. 递归调试技巧
-
-### 手动追踪法
-```c
-struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
-    printf("调用: mergeTwoLists(%p, %p)\n", list1, list2);
-    
-    if (list1 == NULL) {
-        printf("返回 list2\n");
-        return list2;
-    }
-    if (list2 == NULL) {
-        printf("返回 list1\n");  
-        return list1;
-    }
-    
-    if (list1->val <= list2->val) {
-        printf("选择 list1->val = %d\n", list1->val);
-        list1->next = mergeTwoLists(list1->next, list2);
-        return list1;
-    } else {
-        printf("选择 list2->val = %d\n", list2->val);
-        list2->next = mergeTwoLists(list1, list2->next);
-        return list2;
-    }
-}
-```
-
-### 纸笔模拟法
-1. 画出每次函数调用的参数
-2. 标记每次的决定（选哪个节点）
-3. 追踪返回值的传递
-
-## 5. 常见递归类型
-
-### 1. 链表递归
-```c
-// 反转链表
-struct ListNode* reverseList(struct ListNode* head) {
-    if (head == NULL || head->next == NULL) return head;
-    
-    struct ListNode* newHead = reverseList(head->next);
-    head->next->next = head;
-    head->next = NULL;
-    return newHead;
-}
-```
-
-### 2. 树的递归
-```c
-// 计算树的深度
-int maxDepth(struct TreeNode* root) {
-    if (root == NULL) return 0;
-    
-    int leftDepth = maxDepth(root->left);
-    int rightDepth = maxDepth(root->right);
-    return 1 + (leftDepth > rightDepth ? leftDepth : rightDepth);
-}
-```
-
-### 3. 数组递归
-```c
-// 二分查找
-int binarySearch(int arr[], int left, int right, int target) {
-    if (left > right) return -1;
-    
-    int mid = left + (right - left) / 2;
-    if (arr[mid] == target) return mid;
-    
-    if (arr[mid] > target) {
-        return binarySearch(arr, left, mid - 1, target);
-    } else {
-        return binarySearch(arr, mid + 1, right, target);
-    }
-}
-```
-
-## 6. 什么时候使用递归？
-
-### ✅ 适合递归的场景
-- **自相似结构**：链表、树、图
-- **问题可以分解**：大问题能分成同类型小问题
-- **有明确的终止条件**：不会无限递归
-- **状态简单**：不需要记录复杂的中间状态
-
-### ❌ 不适合递归的场景
-- **简单循环能解决**：如数组遍历
-- **需要大量中间状态**：如动态规划的某些问题
-- **性能要求高**：递归有函数调用开销
-- **可能栈溢出**：递归层数过深
-
-## 7. 递归 vs 迭代对比
-
-### 链表合并：递归版
-```c
-struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
-    if (list1 == NULL) return list2;
-    if (list2 == NULL) return list1;
-    
-    if (list1->val <= list2->val) {
-        list1->next = mergeTwoLists(list1->next, list2);
-        return list1;
-    } else {
-        list2->next = mergeTwoLists(list1, list2->next);
-        return list2;
-    }
-}
-
-// 优点：代码简洁，逻辑清晰
-// 缺点：空间复杂度O(m+n)，可能栈溢出
-```
-
-### 链表合并：迭代版
-```c
-struct ListNode* mergeTwoLists(struct ListNode* list1, struct ListNode* list2) {
-    struct ListNode dummy;
-    dummy.next = NULL;
-    struct ListNode* current = &dummy;
-    
-    while (list1 != NULL && list2 != NULL) {
-        if (list1->val <= list2->val) {
-            current->next = list1;
-            list1 = list1->next;
+        // 2. 谁小，谁就当老大，剩下的部分继续“甩锅”递归合并
+        if (list1->val < list2->val) {
+            // list1 小，list1 留下，其身后接上剩下部分的合并结果
+            list1->next = mergeTwoLists(list1->next, list2);
+            return list1;
         } else {
-            current->next = list2;
-            list2 = list2->next;
+            // list2 小（或相等），list2 留下，其身后接上剩下部分的合并结果
+            list2->next = mergeTwoLists(list1, list2->next);
+            return list2;
         }
-        current = current->next;
     }
-    
-    current->next = (list1 != NULL) ? list1 : list2;
-    return dummy.next;
-}
+};
+3. 🚨 面试官的夺命追问：递归和迭代，到底谁更好？
+写完递归，面试官一定会紧接着问你：“这段代码确实很美，那它的空间复杂度是多少？在实际工业界中，你会更倾向于用刚才的迭代，还是现在的递归？”
 
-// 优点：空间复杂度O(1)，性能更好
-// 缺点：代码稍长，需要维护更多变量
-```
+这时候，你必须给出极其专业的回答：
 
-## 8. 递归学习建议
+时间复杂度：两者都是 O(M + N)。每次递归都会排好一个节点。
 
-### 入门练习题
-1. **阶乘计算**：n! = n * (n-1)!
-2. **斐波那契数列**：fib(n) = fib(n-1) + fib(n-2)
-3. **链表长度**：length(head) = 1 + length(head->next)
+空间复杂度发生了致命变化：迭代法的空间是绝对的 O(1)。但递归法的空间复杂度是 O(M + N)！
 
-### 进阶练习
-1. **二叉树遍历**：前中后序
-2. **链表反转**：递归实现
-3. **快速排序**：分治思想
+为什么？ 因为递归需要调用“系统函数调用栈”。链表总共有多长，递归就会嵌套多深。
 
-### 掌握标志
-- 能快速识别递归终止条件
-- 能清晰定义递归子问题
-- 不再纠结递归过程的每一步
-- 相信递归函数的功能定义
-
-## 关键心得
-
-> **不要试图跟踪递归的每一步执行过程**
-> 
-> **相信你定义的函数功能，专注于当前层要做什么**
-> 
-> **递归的艺术在于"相信"而非"控制"**
-
-
+工业界抉择：如果链表长度达到了几十万、上百万级别，递归解法绝对会导致经典的 Stack Overflow（栈溢出）导致程序直接崩溃！ 所以，虽然递归代码极其优雅，但在真实的大型工程中，我们依然会首选上一次给你写的迭代法（虚拟头节点）来保平安。
 */
 
+//我的代码：
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        if (list1 == nullptr) return list2;
+        if (list2 == nullptr) return list1;
+
+        if (list1->val <  list2->val)
+        {
+            list1->next = mergeTwoLists(list1->next, list2);
+            return list1;
+        }
+        else
+        {
+            list2->next = mergeTwoLists(list1, list2->next);
+            return list2;
+        }
+
+    }
+};
 
