@@ -1,104 +1,140 @@
 /*
-方法三：快慢指针
-思路
+为什么这么说？因为这道题是大厂面试里最经典的“缝合怪”神题。它完美地把你刚刚学会的“206. 反转链表”，和我在上一个回答结尾向你疯狂暗示的“快慢指针”，天衣无缝地结合在了一起！
 
-避免使用 O(n) 额外空间的方法就是改变输入。
+如果在面试中，你直接把链表的值全抄到一个数组里，然后用双指针从头尾往中间扫。面试官会微笑着说：“这确实是 O(N) 的时间，但空间复杂度也是 O(N)。你能用 O(1) 的空间复杂度完成吗？”
 
-我们可以将链表的后半部分反转（修改链表结构），然后将前半部分和后半部分进行比较。比较完成后我们应该将链表恢复原样。虽然不需要恢复也能通过测试用例，但是使用该函数的人通常不希望链表结构被更改。
+一旦加上 O(1) 空间的枷锁，我们就必须直接在链表本体上动刀子了！
 
-该方法虽然可以将空间复杂度降到 O(1)，但是在并发环境下，该方法也有缺点。在并发环境下，函数运行时需要锁定其他线程或进程对链表的访问，因为在函数执行过程中链表会被修改。
+1. 核心思维：快慢指针找中点 + 反转后半段
+单向链表最大的痛点就是“无法回头”。既然不能从尾巴往前走，那我们就把后半段链表直接物理掉头！
 
-算法
+满分破局战略（极其优雅的三步走）：
 
-整个流程可以分为以下五个步骤：
+“龟兔赛跑”找中点（快慢指针）：
+我们派出两个指针：slow（乌龟，每次走 1 步）和 fast（兔子，每次走 2 步）。
+当兔子走到链表尽头时，因为兔子的速度是乌龟的两倍，此时乌龟绝对刚好停在链表的正中间！
 
-找到前半部分链表的尾节点。
-反转后半部分链表。
-判断是否回文。
-恢复链表。
-返回结果。
-执行步骤一，我们可以计算链表节点的数量，然后遍历链表找到前半部分的尾节点。
+过河拆桥，反转后半段：
+乌龟身后的那半段链表，直接调用你刚刚滚瓜烂熟的“反转链表”绝技，把它们全部掉头！
 
-我们也可以使用快慢指针在一次遍历中找到：慢指针一次走一步，快指针一次走两步，快慢指针同时出发。当快指针移动到链表的末尾时，慢指针恰好到链表的中间。通过慢指针将链表分为两部分。
+双向奔赴，进行比对：
+现在，一个指针站在原链表的头部，另一个指针站在被反转的后半段的头部。两人同时一步步往前走，只要发现值不一样，直接宣判不是回文！
+(注：比对完成后，出于高级程序员的职业素养，我们通常会再反转一次，把链表复原。)
 
-若链表有奇数个节点，则中间的节点应该看作是前半部分。
+2. C++ 满分工业级代码
+这段代码把模块化做得极好，直接把你刚才写的 reverseList 拿过来当了外援工具人：
 
-步骤二可以使用「206. 反转链表」问题中的解决方法来反转链表的后半部分。
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    bool isPalindrome(ListNode* head) {
+        if (head == nullptr || head->next == nullptr) return true;
 
-步骤三比较两个部分的值，当后半部分到达末尾则比较完成，可以忽略计数情况中的中间节点。
+        // 1. 快慢指针找中点 (龟兔赛跑)
+        ListNode* slow = head;
+        ListNode* fast = head;
+        // 确保 fast 和 fast->next 有路可走
+        while (fast->next != nullptr && fast->next->next != nullptr) {
+            slow = slow->next;       // 乌龟走一步
+            fast = fast->next->next; // 兔子走两步
+        }
 
-步骤四与步骤二使用的函数相同，再反转一次恢复链表本身。
+        // 此时 slow 停在前半段的尾巴上，slow->next 就是后半段的开头
+        // 2. 反转后半段链表
+        ListNode* secondHalfHead = reverseList(slow->next);
 
-作者：力扣官方题解
-链接：https://leetcode.cn/problems/palindrome-linked-list/solutions/457059/hui-wen-lian-biao-by-leetcode-solution/
-来源：力扣（LeetCode）
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+        // 3. 两个指针分别从头、尾向中间遍历比对
+        ListNode* p1 = head;
+        ListNode* p2 = secondHalfHead;
+        bool isPalin = true; // 记录结果
+        
+        while (isPalin && p2 != nullptr) {
+            if (p1->val != p2->val) {
+                isPalin = false; // 发现不对称，标记为 false
+            }
+            p1 = p1->next;
+            p2 = p2->next;
+        }
 
+        // 4. (优雅的加分项) 恢复原链表结构，再反转一次接回去
+        slow->next = reverseList(secondHalfHead);
+
+        return isPalin;
+    }
+
+private:
+    // 你的绝活：反转链表辅助函数
+    ListNode* reverseList(ListNode* head) {
+        ListNode* prev = nullptr;
+        ListNode* curr = head;
+        while (curr != nullptr) {
+            ListNode* next_temp = curr->next;
+            curr->next = prev;
+            prev = curr;
+            curr = next_temp;
+        }
+        return prev;
+    }
+};
+3. 复杂度分析发生了怎样的质变？
+时间复杂度：O(N)。找中点遍历了半次，反转后半段遍历了半次，比对又遍历了半次，复原又遍历了半次。总共也就走了大约 2N 步，依然是绝对的线性时间。
+
+空间复杂度：O(1)。全场只用了几个孤立的指针（slow, fast, p1, p2 等），没有开辟任何数组或哈希表。把内存压榨到了极致！
 */
 
-
-struct ListNode* lianbiaofanzhuan(struct ListNode* head)
-{
-    if (head == NULL)
-        return NULL;
-    struct ListNode  jiatou;
-    struct ListNode* p = head;
-    struct ListNode* q ;
-    jiatou.next = NULL;
-    while (p != NULL)
+class Solution {
+public:
+    ListNode* fanzhuan(ListNode* head)//为什么要有返回值？  因为这是在中间翻转的链表，需要返回头链表，方便查阅
     {
-        q = p->next;
-        p->next = jiatou.next;
-        jiatou.next = p;
-        p = q;
-    }
-    return jiatou.next;
+        ListNode* pre = nullptr;
+        ListNode* curr = head;
 
-}
-
-
-
-
-bool isPalindrome(struct ListNode* head) {
-
-    if (head == NULL)
-        return false;
-
-    int length = 0;
-
-    struct ListNode* temp= head;
-    struct ListNode* jia = head;
-    struct ListNode* fanzhuan ;
-
-
-    while (jia != NULL)
-    {
-        length++;
-        if (length %2== 0)
+        while (curr != nullptr)
         {
-            temp = temp->next;
+            ListNode* curr_next = curr->next;
+            curr->next = pre;
+            pre = curr;
+            curr = curr_next;
         }
-        jia = jia->next;
-    }
-    
-    if (length % 2 == 0)//偶数
-    {
-        fanzhuan=lianbiaofanzhuan(temp);  //直接翻转
-    }
-    else
-    {
-        fanzhuan = lianbiaofanzhuan(temp->next);  //直接翻转
+        return pre;
     }
 
-    while(fanzhuan != NULL)
-    {
-        if (fanzhuan->val != head->val)
+    bool isPalindrome(ListNode* head) {
+        ListNode* slow = head;
+        ListNode* fast = head;
+
+        while (fast->next != nullptr && fast->next->next != nullptr)
         {
-            return false;
+            slow = slow->next;
+            fast = fast->next->next;
         }
-        head = head->next;
-        fanzhuan = fanzhuan->next;
-    }
 
-    return true;
-}
+        ListNode* second_lianbiao = fanzhuan(slow->next);
+
+        ListNode* new_head = head;
+        bool result=true;
+
+        while (result&& second_lianbiao!=nullptr)
+        {
+            if (new_head->val != second_lianbiao->val)
+            {
+                result = false;
+            }
+            second_lianbiao = second_lianbiao->next;
+            new_head = new_head->next;
+        }
+
+
+        return result;
+    }
+};
