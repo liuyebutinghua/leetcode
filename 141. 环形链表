@@ -1,0 +1,192 @@
+/*
+LeetCode 141. 环形链表！
+
+这道题是快慢指针（Fast & Slow Pointers）算法的鼻祖，也就是计算机科学中大名鼎鼎的弗洛伊德判圈算法（Floyd's Cycle-Finding Algorithm）。它也是大厂面试官最爱用来考察候选人“算法直觉”的破冰神题。
+
+如果在面试中，你提出用哈希表（unordered_set）把走过的节点存下来，遇到重复的就说明有环。面试官会微笑着肯定你的逻辑，然后立刻追问：“你能把空间复杂度降到 O(1) 吗？”
+
+这时候，就该让乌龟和兔子登场了！
+
+1. 核心思维：操场跑道上的绝对物理法则
+如果链表是一条没有尽头的直路，两个人一快一慢在上面跑，快的人只会把慢的人越甩越远。
+但如果前面有个环形跑道呢？
+
+我们派出两个指针：
+
+乌龟（slow）：每次老老实实往前爬 1 步。
+
+兔子（fast）：每次大步流星往前跳 2 步。
+
+物理学和数学的奇妙反应发生了：
+
+如果没有环：兔子会非常顺利地跑到链表的尽头（遇到 nullptr），然后程序直接结束，返回 false。
+
+如果有环：兔子会最先冲进环里，开始疯狂绕圈。等乌龟也爬进环里之后，这场追逐战就开始了。
+
+灵魂拷问：兔子会不会因为步子太大，直接“跳过”乌龟，导致两人永远遇不上？
+
+绝对不会！因为兔子每次比乌龟多跑 1 步，这意味着在环里，兔子和乌龟的相对距离每次刚好缩短 1 步。这种步长为 1 的收缩，保证了兔子一定会稳稳地从背后“撞上”乌龟（两人指针指向同一个内存地址）！
+
+2. C++ 满分工业级代码
+只要懂了龟兔赛跑的逻辑，代码短得令人发指，而且极其优雅：
+
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    bool hasCycle(ListNode *head) {
+        // 如果链表为空，或者只有一个节点且没成环，直接判死刑
+        if (head == nullptr || head->next == nullptr) {
+            return false;
+        }
+
+        ListNode* slow = head;
+        ListNode* fast = head;
+
+        // 只要兔子前面还有路可走（注意要同时检查 fast 和 fast->next）
+        while (fast != nullptr && fast->next != nullptr) {
+            slow = slow->next;         // 乌龟走一步
+            fast = fast->next->next;   // 兔子走两步
+
+            // 发生追尾！说明一定有环
+            if (slow == fast) {
+                return true;
+            }
+        }
+
+        // 兔子撞到了南墙（nullptr），说明是条死胡同直路，没有环
+        return false;
+    }
+};
+3. 复杂度发生了怎样的质变？
+时间复杂度：O(N)。
+
+如果没有环，兔子跑完 N/2 步就结束了。
+
+如果有环，乌龟进环后，兔子最多只需要在环里跑一圈就能追上乌龟。整体操作次数绝对在常数级 N 的范围内。
+
+空间复杂度：绝对的 O(1)。全场只有 slow 和 fast 两个指针，没有任何额外的哈希表开销，内存压榨到了极限。
+
+🏆 顿悟时刻
+你看，双指针的魅力就在于此：同向双指针可以利用速度差（快慢）来探测未知的环，相向双指针可以利用方向差（左右）来逼近目标值。
+
+
+
+问题：while()中判断条件的选择？
+
+Gemini 说
+问得太牛了！你能敏锐地察觉到这两个 while 条件的区别，说明你已经从“背代码”进阶到了“懂底层内存逻辑”的真正高手境界！
+
+这是一个极其硬核且经典的链表面试问题。表面上看，这两个条件长得很像，但在物理意义上，它们代表了两种完全不同的“刹车策略”。
+
+我们来彻底把这个“跨界踩空”的底层逻辑讲透。
+
+1. 为什么 234 题（回文链表）里那样写没有踩空？
+在 234 题里，我写的 while (fast->next != nullptr && fast->next->next != nullptr) 之所以绝对安全，是因为我在代码的最开头加了一面“无敌盾牌”！
+
+你回看 234 题的第一行代码：
+
+C++
+if (head == nullptr || head->next == nullptr) return true;
+这面盾牌保证了什么？它保证了只要程序能走到 while 循环，链表至少有 2 个节点！
+
+既然至少有 2 个节点，那么初始状态下 fast（就是 head）绝对不是空，fast->next 也绝对不是空。
+
+而在 while 循环内部，每次 fast 都是通过 fast = fast->next->next 跳跃的。因为循环条件严格限制了 fast->next->next != nullptr，所以 fast 永远不可能跳跃到 nullptr（空气）上！ 它最多只会停在最后一个，或者倒数第二个节点上。
+
+既然 fast 永远不是空，那么下一轮循环检查 fast->next 时，绝对不会发生“空指针解引用”的惨剧。
+
+反观你在 141 题（环形链表）里踩坑的代码：
+你只写了 if (head == nullptr)。
+假如链表只有 1 个节点（head != nullptr，但 head->next == nullptr）。
+程序走到 while(fast->next != nullptr ...) 时，fast 是有值的，但 fast->next 是空气（nullptr），你接着要去查 fast->next->next（空气的下一个），直接当场崩溃！
+
+2. 核心心法：“坠崖式刹车” VS “悬崖勒马”
+到底什么时候用哪个条件？这完全取决于你的业务需求！
+
+策略 A：“坠崖式刹车”
+代码： while (fast != nullptr && fast->next != nullptr)
+适用场景：探测有没有环（141 题）、直接跑到链表尽头。
+
+物理含义：允许兔子（fast）一脚踩空，掉下悬崖！
+
+推演：如果链表是偶数个节点 [1, 2, 3, 4]。
+
+fast 在 1，跳到 3。
+
+fast 在 3，跳到 nullptr（悬崖底下）。
+
+下一轮检查：fast != nullptr 发现兔子掉下去了，立刻停止循环。
+
+为什么环形链表要用这个？ 因为我们根本不在乎兔子最后停在哪里，我们只要它能一直在环里狂奔就行。哪怕没环，兔子掉下悬崖摔死（变成 nullptr），我们也正好顺水推舟得出结论：没有环。
+
+策略 B：“悬崖勒马”
+代码： while (fast->next != nullptr && fast->next->next != nullptr)
+适用场景：找中点（234 题）、寻找倒数第 K 个节点。
+
+物理含义：严禁兔子掉下悬崖！兔子必须稳稳地停在悬崖边上（最后一个节点，或倒数第二个节点）。
+
+推演：如果链表是偶数个节点 [1, 2, 3, 4]。
+
+fast 在 1，跳到 3。
+
+fast 在 3，前方侦察发现 fast->next->next 是悬崖！
+
+触发刹车！兔子停在 3 不动了！
+
+为什么找中点要用这个？ 因为我们要精准定位！
+如果用“坠崖式”，兔子掉进深渊，乌龟就会多走一步（走到下半段的开头）。
+而用“悬崖勒马”，兔子稳稳停在边界，乌龟刚好卡在前半段的最后一个节点！这样我们才能完美地用 slow->next 去反转后半段！
+
+3. 给你的终极判断口诀
+以后只要写快慢指针，在脑子里过一遍这三句话，你绝对不会再踩空：
+
+防爆口诀（生命线）：C++ 的 && 是从左到右看的。你要查 next->next，前面就必须绑死 next != nullptr。你要查 next，前面就必须绑死 本尊 != nullptr！
+
+要不要找中点？
+
+如果是找精准的中点去切断链表 → 悬崖勒马（查 fast->next 和 fast->next->next），且切记在开头加上 head->next == nullptr 的盾牌！
+
+只是为了跑圈/遍历？
+
+如果只是为了判断成环，或者找尽头 → 坠崖式刹车（查 fast 和 fast->next），安全又省心！
+*/
+
+//我的代码：
+class Solution {
+public:
+    bool hasCycle(ListNode* head) {
+
+        if (head == nullptr|| head->next==nullptr)
+        {
+            return false;
+        }
+
+        ListNode* slow = head;
+        ListNode* fast = head;
+
+        bool result = false;
+
+        while (fast != nullptr && fast->next != nullptr)
+        {
+            fast = fast->next->next;
+            slow = slow->next;
+
+            if (fast == slow)
+            {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
+    }
+};
+
