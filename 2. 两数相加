@@ -1,87 +1,139 @@
 /
-使用遍历法，针对特殊情况进行设计
+你想想，我们在小学列竖式算加法的时候，是不是从个位（最低位）开始算，算完向前进位，然后再算十位？
+题目说数字是“逆序”存储的（比如 123 存成了 3→2→1），这意味着链表的头节点正好就是个位！ 链表往后走，正好就是十位、百位！
 
-/
+也就是说，这道题根本不需要任何翻转！ 链表的方向和我们列竖式算加法的方向是完美一致的！
+如果按照你的思路去翻转，反而会把个位移到最后面，处理起来会变得极其痛苦（特别是当两个数字长度不一样的时候，比如 999+1）。
 
-int my_sum(int num1,int num2,short * Decimal_sign)
-{
-    int sum = num1+ num2+*Decimal_sign;
-    if (sum >= 10)
-    {
-        sum = sum - 10;
-        *Decimal_sign = 1;
-    }
-    else
-    {
-        *Decimal_sign = 0;
-    }
-    return sum;
+1. 核心思维：小学竖式加法 + “无敌哨兵”
+既然方向完全一致，我们只需要用上一题刚刚学到的“虚拟头节点（Dummy Node）”，再拉上一个记录“进位（carry）”的小本子，就可以在一次遍历（一趟循环）中极其优雅地把这题秒杀！
 
-}
+极简战术：
 
+准备一个 carry 变量，初始为 0。
 
-struct ListNode* addTwoNumbers(struct ListNode* l1, struct ListNode* l2) {
-    short Decimal_sign  = 0 ;
-    struct ListNode* ad1 = l1;
-    struct ListNode* ad2 = l2;
-    while (l1->next != NULL && l2->next != NULL)
-    {
-        l1->val = my_sum(l1->val, l2->val, &Decimal_sign);
-        l2->val = l1->val;
-        l1 = l1->next;
-        l2 = l2->next;
-    }
-    if (l1->next != NULL&& l2->next==NULL)
-    {
-        l1->val = my_sum(l1->val, l2->val, &Decimal_sign);
-        l1 = l1->next;
-        while (l1 != NULL)
-        {
-            l1->val = my_sum(l1->val, 0, &Decimal_sign);
-            if (l1->next == NULL&& Decimal_sign!=0)
-            {
-                static struct ListNode end;
-                end.next = NULL;
-                end.val = 1;
-                l1->next = &end;
-                return ad1;
+只要 l1 没走完，或者 l2 没走完，或者 carry 还不为 0（极其关键的防守），我们就继续算！
+
+每一位的真实总和 sum = (l1 的值) + (l2 的值) + carry。
+
+留在当前位的值就是 sum % 10（取余数）。
+
+进位到下一位的值就是 sum / 10（取商）。
+
+把算出来的值打包成一个新节点，接在 Dummy 节点的屁股后面。
+
+2. C++ 满分极客代码（绝对的一气呵成）
+这段代码将“遍历、相加、进位、处理不等长”全部揉进了一个 while 循环里，干净利落，没有一句废话：
+
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        // 1. 请出老朋友：虚拟头节点（Dummy Node），用来挂载结果链表
+        ListNode* dummy = new ListNode(0);
+        ListNode* curr = dummy; // 缝纫机指针
+        
+        int carry = 0; // 记录进位
+
+        // 2. 灵魂循环：只要 l1、l2 还有数字，或者手里还有进位没处理完，就继续算！
+        // 这里的 carry != 0 极其关键，它完美解决了 9 + 9 = 18 最后还要多出一位的问题！
+        while (l1 != nullptr || l2 != nullptr || carry != 0) {
+            // 开始算这一位的总和，先把上一轮留下来的进位加上
+            int sum = carry; 
+            
+            // 如果 l1 还没走完，加上 l1 的值，l1 往前走
+            if (l1 != nullptr) {
+                sum += l1->val;
+                l1 = l1->next;
             }
-            l1 = l1->next;
-        }
-        return  ad1;
-    }
-    else if (l2->next != NULL && l1->next == NULL)
-    {
-        l2->val = my_sum(l1->val, l2->val, &Decimal_sign);
-        l2 = l2->next;
-        while (l2 != NULL)
-        {
-            l2->val = my_sum(0, l2->val, &Decimal_sign);
-            if (l2->next == NULL && Decimal_sign != 0)
-            {
-                static struct ListNode end;
-                end.next = NULL;
-                end.val = 1;
-                l2->next = &end;
-                return ad2;
+            
+            // 如果 l2 还没走完，加上 l2 的值，l2 往前走
+            if (l2 != nullptr) {
+                sum += l2->val;
+                l2 = l2->next;
             }
-            l2 = l2->next;
+            
+            // 算出给下一轮的进位（比如 sum=18，carry=1）
+            carry = sum / 10;
+            
+            // 算出留在当前位的值（比如 sum=18，留在当前位的是 8）
+            curr->next = new ListNode(sum % 10);
+            
+            // 缝纫机指针往前走一步
+            curr = curr->next;
         }
-        return  ad2;
+
+        // 3. 收尾工作：拿到真正的头节点，释放 dummy
+        ListNode* result = dummy->next;
+        delete dummy;
+        
+        return result;
     }
-    else 
-    {
-        l2->val = my_sum(l1->val, l2->val, &Decimal_sign);
-        if (Decimal_sign != 0)
+};
+3. 复杂度分析发生了怎样的质变？
+时间复杂度：O(max(M, N))。其中 M 和 N 是两个链表的长度。我们最多只把较长的那个链表遍历了一遍，绝对的线性时间。这比你构思的“翻转 -> 遍历 -> 处理 -> 再翻转”要快好几倍！
+
+空间复杂度：O(1)。除了返回所需的新链表节点外，我们只用了 carry 和几个指针，内存压榨依旧完美。
+*/
+
+//我的代码：
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+
+        ListNode* dummy=  new ListNode(0);
+
+        ListNode* curr = dummy;
+
+        int jinwei = 0;
+
+        while (l1 != nullptr || l2 != nullptr||jinwei!=0)//jinwei!=0  主要是用来保证9+9=18中的1不消失
         {
-            static struct ListNode end;
-            end.next = NULL;
-            end.val = 1;
-            l2->next = &end;
-            return ad2;
+            int num = jinwei;
+            if (l1 != nullptr)
+            {
+                num += l1->val;
+                l1 = l1->next;
+            }
+            if (l2 != nullptr)
+            {
+                num += l2->val;
+                l2 = l2->next;
+            }
+
+            jinwei = num / 10;
+
+            ListNode* he_dian = new ListNode(num %10);
+            curr->next = he_dian;
+
+            curr = curr->next;
         }
-        return ad2;
+
+        ListNode* result = dummy->next;
+        delete dummy;
+
+        return result;
+
     }
+};
 
-}
-
+/*
+易错点：
+1.while (l1 != nullptr || l2 != nullptr||jinwei!=0)    不是&& 是 || 只要有一个不成立都还可以运行
+2. if (l2 != nullptr)
+    {
+        num += l2->val;
+        l2 = l2->next;
+    }  中记得要l2 l1前进jinwei
+3.ListNode* he_dian = new ListNode(num %10);  是num %10 不是jinwei%10
+*/
