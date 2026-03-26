@@ -1,160 +1,178 @@
 /*
-综合考虑，后期打算改用C++进行答题
+这道题是名副其实的 Hard 级别，它不仅是面试场上的“大杀器”，更是检验你代码工程能力的“试金石”。
+它要求你把“206. 反转链表”和“24. 两两交换链表中的节点”完美融合，并且还要处理极其复杂的边界断连问题。
 
+准备好纸笔，我们现在就来拆解这台精密仪器的内部构造！
 
-🧠 刻意练习方法：由图转码
-想要练出“变量直觉”，不要直接写代码，试试这个步骤：
+1. 终极拆解图：模块化“切香肠”战术
+面对长长的链表，不要慌。我们的战术是：侦察、切断、翻转、缝合。
 
-画图：在纸上画出链表或数组。
+我们需要派出几个关键的指针来打配合：
 
-用手指模拟：用手指指着当前的节点。
+dummy：无敌哨兵，雷打不动地保护着整个链表的头部。
 
-大声说出动作：
+pre（保镖）：永远站在即将要翻转的那 K 个节点的最前面。
 
-“我现在指着 1。” -> 好的，这需要一个指针 curr。
+end（侦察兵）：负责往前探路，数够 K 个节点。
 
-“我要把 1 的箭头指向 2。” -> 2 在哪？哦，2 是 curr->next。
+start：要翻转的那 K 个节点的第一个节点（翻转后它会变成最后一个）。
 
-“现在我要断开 1 和 2 的连接。” -> 等等！断开后 2 就丢了！
+nextGroup：下一组未处理节点的开头（翻转期间绝不能弄丢！）。
 
-觉醒时刻：“所以我必须先找个变量 temp 把 2 抓住！”
+极其暴力的“四步手术法”：
 
-*/
+侦察兵探路：让 end 从 pre 的位置往前走 K 步。如果还没走到 K 步就掉下悬崖（nullptr）了，说明剩下的节点不够 K 个，直接收工回家，什么都不用改！
 
-// 链表节点的定义（这是 LeetCode 提供的标准结构）
-struct ListNode {
-	int val;
-	ListNode* next;
-	ListNode() : val(0), next(nullptr) {}
-	ListNode(int x) : val(x), next(nullptr) {}
-	ListNode(int x, ListNode* next) : val(x), next(next) {}
-};
+物理切断（最危险的一步）：如果凑齐了 K 个，记下下一组的开头 nextGroup = end->next。然后手起刀落，把 end->next 设为 nullptr！此时，这 K 个节点变成了一个彻底独立的短链表！
 
+关门翻转：直接呼叫你的老熟人——206题的“反转链表”函数，把这段独立的短链表整个掉个头！
+
+伤口缝合：翻转完成后，原本的 start 变成了尾巴，原本的 end 变成了新头。
+
+让保镖 pre->next 连上新头（end）。
+
+让新尾巴 start->next 连上下一组的开头（nextGroup）。
+
+最后，让保镖 pre 和侦察兵 end 都走到新尾巴 start 的位置，准备切割下一段香肠！
+
+2. C++ 满分工业级神级代码
+你看，只要把逻辑拆分好，再复杂的 Hard 题，写出来也像是一篇条理清晰的说明书。注意看里面对 reverse 辅助函数的完美调用：
+
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
 class Solution {
 public:
-	ListNode* reverse(ListNode* head)
-	{
-		ListNode* pre=nullptr;
-		ListNode* curr= head;
-		while (curr != nullptr)//如果头地址就是nullptr，直接返回
-		{
-			ListNode* next11= curr->next;
-			curr->next = pre;
-			pre = curr;
-			curr = next11;
-		}
-		return pre;
-	}
-
-	ListNode* reverseKGroup(ListNode* head, int k) {
-		//1.创建虚节点  
-		ListNode dummy(0, head);
-		ListNode* pre = &dummy;
-		ListNode* end = &dummy;
-
-		while (end->next != nullptr)
-		{
-			// --- 步骤 1：分组（试探有没有 k 个节点）---
-			for (int i = 0; i < k&& end!=nullptr; i++)
-			{
-				end = end->next;
-			}
-			if (end == nullptr)
-			{
-				break;
-			}
-			ListNode* start = pre->next;
-			ListNode* nextgrouphead = end->next;
-			end->next = nullptr;//断开
-
-			pre->next = reverse(start);
-
-			start->next = nextgrouphead;
-
-			pre = start;
-			end = start;
-
-
-		}
-		return dummy.next;
-
-	}
-};
-
-
-
-
-/*这次答题参考Gemini提供的思路*/
-#include <iostream>
-
-// 链表节点的定义（这是 LeetCode 提供的标准结构）
-struct ListNode {
-    int val;
-    ListNode *next;
-    ListNode() : val(0), next(nullptr) {}
-    ListNode(int x) : val(x), next(nullptr) {}
-    ListNode(int x, ListNode *next) : val(x), next(next) {}
-};
-
-class Solution {
-public:
-    // 辅函数：翻转一个链表
-    // 输入：1 -> 2 -> 3
-    // 输出：3 -> 2 -> 1，并返回新的头节点 3
+    // 你的绝活：反转孤立单链表的辅助函数（206题源码直接抄过来）
     ListNode* reverse(ListNode* head) {
         ListNode* pre = nullptr;
         ListNode* curr = head;
         while (curr != nullptr) {
-            ListNode* next = curr->next; // 暂存下一步
-            curr->next = pre;            // 箭头反指
-            pre = curr;                  // pre 前进
-            curr = next;                 // curr 前进
+            ListNode* next_temp = curr->next;
+            curr->next = pre;
+            pre = curr;
+            curr = next_temp;
         }
         return pre;
     }
 
-    // 主函数
     ListNode* reverseKGroup(ListNode* head, int k) {
-        // 1. 创建虚拟头节点，指向 head
+        // 1. 请出无敌哨兵 Dummy Node
         ListNode* dummy = new ListNode(0);
         dummy->next = head;
-
-        // pre 指针：总是指向“当前要处理的这组”的前一个节点
-        // 刚开始，它指向 dummy
+        
+        // pre 和 end 一开始都和 dummy 站在一起
         ListNode* pre = dummy;
-        ListNode* end = dummy; // end 指针：用来探测这组有没有 k 个节点
+        ListNode* end = dummy;
 
+        // 只要链表还没走到尽头，就继续尝试“切香肠”
         while (end->next != nullptr) {
-            // --- 步骤 1：分组（试探有没有 k 个节点）---
+            // 2. 侦察兵 end 往前走 K 步
             for (int i = 0; i < k && end != nullptr; i++) {
                 end = end->next;
             }
-            // 如果不足 k 个（end 跑到了空），说明剩下的不用翻转了，直接结束
+            
+            // 如果 end 变成空了，说明最后这段不够 K 个，绝对不能反转，直接跳出循环！
             if (end == nullptr) break;
 
-            // --- 步骤 2：断开 ---
-            // 记录下一种的开始（比如 3）
-            ListNode* start = pre->next; // 本组的开始（比如 1）
-            ListNode* nextGroup = end->next; // 下一组的开始（比如 3）
+            // 3. 记录关键节点，准备动刀
+            ListNode* start = pre->next;          // 这 K 个节点的开头
+            ListNode* nextGroup = end->next;      // 下一组的开头（留好后路）
 
-            end->next = nullptr; // 【切断】 1->2 与 3 的联系，变成独立的 1->2
+            // 4. 手起刀落：彻底切断这 K 个节点与后面的联系
+            end->next = nullptr;
 
-            // --- 步骤 3：翻转 ---
-            pre->next = reverse(start); // 翻转 1->2 变成 2->1，并把 dummy 接到 2 上
+            // 5. 关门翻转：调用辅助函数，翻转这 K 个节点
+            // 翻转后，原来的 end 变成了新头，被 pre 接住
+            pre->next = reverse(start);
 
-            // --- 步骤 4：拼接 ---
-            // 翻转后，start（也就是 1）变成了这组的尾巴
-            // 我们要把 1 重新连上 nextGroup（也就是 3）
+            // 6. 伤口缝合：原来的 start 变成了新尾巴，让它接上刚才留好后路的 nextGroup
             start->next = nextGroup;
 
-            // --- 步骤 5：推进 ---
-            // 现在的结构是 dummy -> 2 -> 1 -> 3 -> 4...
-            // 下一组的前一个节点应该是 1（也就是 start）
+            // 7. 整体推进：保镖 pre 和侦察兵 end 都挪到新尾巴 start 的位置，准备下一轮
             pre = start;
-            end = pre; // 重置 end 指针，准备下一次探测
+            end = pre;
         }
 
-        return dummy->next;
+        // 8. 拿到真正的头节点，释放 dummy，完美谢幕！
+        ListNode* result = dummy->next;
+        delete dummy;
+        
+        return result;
+    }
+};
+3. 为什么面试官会给这段代码打满分？
+时间复杂度：O(N)。侦察兵 end 把链表走了一遍，reverse 函数把节点又翻转了一遍。每个节点最多被访问两到三次，绝对的线性时间！
+
+空间复杂度：绝对的 O(1)。全场依然只有几个孤立的指针在飞舞，这就是原汁原味的“原地修改”！
+
+极致的工程素养：将复杂的逻辑拆分成了主函数和 reverse 辅助函数（高内聚低耦合），边界条件处理得滴水不漏。
+
+*/
+
+// 我的代码：
+class Solution {
+    
+public:
+    ListNode* reserve(ListNode* head)
+    {
+        ListNode* pre = nullptr;
+        ListNode* curr = head;
+
+        while (curr!= nullptr)
+        {
+            ListNode* curr_next = curr->next;
+            curr->next = pre;
+            pre = curr;
+            curr = curr_next;
+        }
+        return pre;
+    }
+
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        ListNode* dummy = new ListNode(0);
+        dummy->next = head;
+
+        ListNode* pre = dummy;//前一个
+        ListNode* end = dummy;//尾一个
+
+
+        while (end->next != nullptr)
+        {
+            for (int i = 0; i < k&& end!= nullptr; i++)
+            {
+                end = end->next;
+            }
+
+            if (end == nullptr) break;
+
+            ListNode* start = pre->next;
+
+            ListNode* nextgroup = end->next;
+            end->next = nullptr;
+
+            pre->next = reserve(start);
+
+            start->next = nextgroup;
+
+            pre = start;
+            end = start;
+
+        }
+
+
+        ListNode* result = dummy->next;
+        delete dummy;
+        return result;
+
     }
 };
 
