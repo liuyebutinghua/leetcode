@@ -1,0 +1,108 @@
+/*
+如果说前面的链表题是单线作战，那这道题（LeetCode 24. 两两交换链表中的节点）就是真正考验你“多线并发控制力”的微操巅峰。
+
+题目要求极其苛刻：必须进行物理上的节点交换，绝不允许投机取巧只改节点里的值！ 在交换 node1 和 node2 时，不仅要把它们俩调换位置，还要保证它们前面的节点能连过来，后面的节点别断线。同时牵扯 4 个节点的指针指向，只要弄错一行代码的顺序，链表就会当场断裂，消失在茫茫内存中。
+
+但这难不倒现在的你，因为你手里握着上一节课拿到的绝对真神——虚拟头节点（Dummy Node）！
+
+1. 核心思维：带上“保镖”，跳一曲指针的“三人交谊舞”
+为什么必须要用 Dummy Node？
+因为链表的头节点（head）马上就要被换到第二个位置去了！如果不加 Dummy，你在处理第一个对子的时候就会痛不欲生。
+
+我们让 prev（保镖）一开始站在 dummy 上。
+接下来的每一轮，我们要处理 prev 身后的两个节点：
+
+node1 = prev->next
+
+node2 = prev->next->next
+
+极其严谨的“断线重连三步曲”（注意顺序极其重要！）：
+假设当前情况是：prev -> node1 -> node2 -> node3
+
+保镖牵手新老大：prev->next = node2; （把 prev 直接连到 node2 上）。
+
+旧老大接管小弟：node1->next = node2->next; （把 node1 的尾巴连到 node3 上，防止后面的链表丢失）。
+
+新老大回头拉旧老大：node2->next = node1; （把 node2 的尾巴连回 node1，完成物理翻转）。
+
+经过这三步，链表就变成了：prev -> node2 -> node1 -> node3。
+完美！最后，让保镖 prev 走到 node1 的位置，准备去主持下一对的交换。
+
+2. C++ 满分工业级代码（丝滑微操）
+注意看 while 循环的条件，这就是我们之前讨论过的“悬崖勒马”！因为我们要凑一对（两个节点）才能交换，所以必须保证前面至少还有两个节点。
+
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* swapPairs(ListNode* head) {
+        // 1. 请出无敌哨兵，应对头节点易主的情况
+        ListNode* dummy = new ListNode(0);
+        dummy->next = head;
+
+        // prev 是我们要交换的两个节点的前驱节点（保镖）
+        ListNode* prev = dummy;
+
+        // 2. 悬崖勒马：必须保证 prev 后面至少有两个节点，才够一对用来交换
+        while (prev->next != nullptr && prev->next->next != nullptr) {
+            // 标记好这一对的两个节点
+            ListNode* node1 = prev->next;
+            ListNode* node2 = prev->next->next;
+
+            // 3. 开始执行“三人交谊舞”（核心三步重连）
+            prev->next = node2;            // 步骤 1
+            node1->next = node2->next;     // 步骤 2
+            node2->next = node1;           // 步骤 3
+
+            // 4. 保镖往前走两步（走到原来 node1 的位置），准备下一轮
+            prev = node1; 
+        }
+
+        // 5. 获取真正的新头节点并释放 dummy
+        ListNode* newHead = dummy->next;
+        delete dummy;
+
+        return newHead;
+    }
+};
+3. 复杂度发生了怎样的质变？
+时间复杂度：O(N)。我们顺着链表走了一遍，每两个节点执行了常数级别的指针修改。
+
+空间复杂度：绝对的 O(1)。除了 dummy、prev、node1、node2 这几个辅助指针外，没有任何额外的内存开销。
+*/
+//我的代码：
+class Solution {
+public:
+    ListNode* swapPairs(ListNode* head) {
+        ListNode* dummy =new ListNode(0);
+        dummy->next = head;
+        ListNode* prev = dummy;
+
+
+        while (prev->next != nullptr && prev->next->next != nullptr)
+        {
+            ListNode* node1 = prev->next;
+            ListNode* node2 = prev->next->next;
+
+            prev->next = node2;
+            node1->next = node2->next;
+            node2->next = node1;
+
+            prev = node1;
+        }
+
+        ListNode* result = dummy->next;
+        delete dummy;
+
+        return result;
+    }
+};
