@@ -1,108 +1,160 @@
 /*
+这道题（LeetCode 148. 排序链表）看似平平无奇，但它在面试中的杀伤力极大。因为题目背后通常隐藏着一个硬性要求：时间复杂度必须是 O(NlogN)，且空间复杂度尽可能小。
 
+如果在数组里，你可以闭着眼睛写快速排序（Quick Sort）。但是在链表里，因为你不能通过下标随机访问元素，快速排序会变得极其难写且容易退化。
+这时候，链表排序的绝对王者就诞生了：归并排序（Merge Sort）！
 
-这道题是 LeetCode 148. 排序链表 (Sort List)。
-这是一道非常综合的题目，它基本上就是把我们之前学的几招全部串起来了
-！快慢指针（找中点）。递归（分治法）。链表合并（双指针）。
-对于链表排序，最标准、效率最高（$O(n \log n)$）的算法是归并排序 (Merge Sort)。
-1. 核心思路：分治法 (Divide and Conquer)想象你有一堆乱序的扑克牌（链表），你想把它们理顺。
-归并排序的策略是：“切碎，再组装”。切 (Cut)：把长链表从中间一刀切断，变成两个短链表。
-分 (Recurse)：对这两个短链表继续切，直到切成只剩 1 个节点（或者 0 个）。
-问：1 个节点需要排序吗？答：不需要，它天然就是有序的。（这就是我们的停止条件！）
-合 (Merge)：把两个有序的短链表，合并成一个有序的长链表。2. 解题三部曲我们要写三个模块：找中点（切断）
-：用快慢指针，找到链表的一半，把链表断开。合并（组装）：给你两个有序链表，把它们拼成一个有序链表
-（这其实是另一道 LeetCode 简单题：合并两个有序链表）。主函数：控制整个递归流程。
+之所以说这是“期末考试”，是因为这道题根本不是一道新题，而是你之前做过的两道经典老题的“完美缝合怪”！
 
+1. 核心思维：拆解“归并排序”
+归并排序的核心思想就是八个字：“先切成片，再拼成整体”。
 
+第一步：找中点，一刀切断（用到你学过的“快慢指针”）
+面对一个长链表，我们让乌龟和兔子一起跑。兔子跑到头，乌龟刚好停在中间。手起刀落，把乌龟后面的指针设为 nullptr，一条链表就被完美切成了两条短链表。
+把短链表继续切，一直切到每个链表只剩下 1 个节点（1 个节点天然就是排好序的！）。
 
-细节一：为什么快指针初始化要 fast = head->next？
-这涉及到我们之前聊的**“停止条件”和“死循环”**。
+第二步：合并两个有序链表（用到你学过的“无敌哨兵拉拉链”）
+还记得 21. 合并两个有序链表 吗？你用一个 dummy 节点作为缝纫机，把两个排好序的链表拉拉链一样拼在一起。
+现在，我们把切碎的链表两两合并，最后就能拼成一条完整的、排好序的超长链表！
 
-假设链表只有两个节点：[1, 2]。
+2. 🚨 极其致命的切割陷阱
+在找中点切断时，有一个非常容易死循环的坑。
+假设链表只有两个节点：[4, 2]。
+如果你的乌龟和兔子都从起点 4 出发：
+slow = head; fast = head;
+跑完后，slow 还是停在 4，然后你把 slow->next 断开…… 等等！你根本没切断，因为 slow 永远停在头节点，递归下去就是死循环！
 
-如果是 fast = head：
+破局战术：“兔子抢跑一步”
+为了确保在偶数个节点时，乌龟能停在左半部分的最后一个节点，我们让兔子一开始就站在第二个节点上：
+slow = head; fast = head->next;
+这样 [4, 2] 跑起来时，循环直接不满足，slow 停在 4，我们把 4 的 next 切断，完美分成了 [4] 和 [2]！
 
-快慢指针走完一轮，slow 会走到 2。
+3. C++ 满分工业级代码（极致缝合）
+这段代码就像是搭乐高积木一样，把你之前写的代码完美拼在了一起。你仔细看，全是你写过的熟面孔：
 
-你切不开（mid 变成了空），左边还是 [1, 2]。
-
-递归 sortList([1, 2]) -> 又是 [1, 2] -> 死循环（Stack Overflow）。
-
-如果是 fast = head->next：
-
-一开始 fast 在 2，slow 在 1。
-
-循环进不去（因为 fast->next 是空）。
-
-mid = slow->next (即 2)。
-
-slow->next = nullptr。
-
-成功切分为 [1] 和 [2]。
-
-变量哲学：这里的 slow 实际上充当了“剪刀手”的角色，它必须停在第一段的末尾，而不是第二段的开头。
-
-细节二：Dummy Node 的再次登场
-在 merge 函数里，我们需要构建一个新的链表。 还记得吗？只要头节点可能变（或者头节点还没生出来），就用 Dummy Node。 它让我们避免了写 if (head == nullptr) head = l1; else ... 这种啰嗦的代码。
-*/
-
-
+C++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
 class Solution {
 public:
-    ListNode* merge(ListNode* L1, ListNode* L2)
-    {
-        ListNode dummy(0);
-        ListNode* curr = &dummy;
-
-        while (L1 != nullptr && L2 != nullptr)
-        {
-            if (L1->val < L2->val)
-            {
-                curr->next = L1;
-                L1 = L1->next;
-            }
-            else
-            {
-                curr->next = L2;
-                L2 = L2->next;
-            }
-            curr = curr->next;
-        }
-        if(L1 != nullptr) curr->next = L1;
-        if (L2 != nullptr) curr->next = L2;
-
-        return dummy.next;
-    }
-
-
-
     ListNode* sortList(ListNode* head) {
-        //1.判断head是否为空或者只有一个值
-        if (head == nullptr || head->next == nullptr)
-        {
+        // 1. 递归的保底防线：如果链表为空，或者只有一个节点，直接返回（天然有序）
+        if (head == nullptr || head->next == nullptr) {
             return head;
         }
 
-        //2.快慢指针找到中点
+        // 2. 找中点：快慢指针登场（兔子抢跑一步防死循环！）
         ListNode* slow = head;
         ListNode* fast = head->next;
-
-        while (fast->next != nullptr&&fast != nullptr)
-        {
+        while (fast != nullptr && fast->next != nullptr) {
             slow = slow->next;
-            fast = fast->next->next;  
+            fast = fast->next->next;
         }
 
-        //3.中点分割
-        ListNode* midnode = slow->next; //后一段的头
-        slow->next = nullptr;//切断链表
+        // 3. 手起刀落，切断链表
+        ListNode* mid = slow->next; // mid 是右半部分的开头
+        slow->next = nullptr;       // 彻底斩断左半部分的尾巴
 
-        //4.递归    目的是把链表分成都是1个点的指针
+        // 4. 甩锅大法：让递归自己去把左半边和右半边排好序
         ListNode* left = sortList(head);
-        ListNode* right = sortList(midnode);
+        ListNode* right = sortList(mid);
 
-        //5.拼接并返回拼接完的指针
+        // 5. 调用辅助函数：把排好序的左边和右边合并起来
+        return mergeTwoLists(left, right);
+    }
 
-        return merge(left, right);
+private:
+    // 你的绝活：合并两个有序链表（21题源码直接抄过来）
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        ListNode* dummy = new ListNode(0);
+        ListNode* curr = dummy;
+
+        while (list1 != nullptr && list2 != nullptr) {
+            if (list1->val <= list2->val) {
+                curr->next = list1;
+                list1 = list1->next;
+            } else {
+                curr->next = list2;
+                list2 = list2->next;
+            }
+            curr = curr->next;
+        }
+
+        if (list1 != nullptr) curr->next = list1;
+        if (list2 != nullptr) curr->next = list2;
+
+        ListNode* result = dummy->next;
+        delete dummy;
+        return result;
+    }
+};
+4. 复杂度分析与面试官的终极考验
+时间复杂度：O(NlogN)。每次对半切开是 logN 层，每一层合并所有节点需要 N 步。这是基于比较的排序的物理极限！
+
+空间复杂度：O(logN)。由于我们使用了递归，系统调用栈的最大深度是 logN（也就是树的高度）。
+*/
+
+
+//我的代码：
+class Solution {
+public:
+    ListNode* mergeshunxu(ListNode* head1, ListNode* head2)
+    {
+        ListNode* dummy = new ListNode(0);
+        ListNode* curr = dummy;
+
+        while (head1 != nullptr && head2 != nullptr)
+        {
+            if (head1->val < head2->val)
+            {
+                curr->next = head1;
+                curr = curr->next;
+                head1 = head1->next;
+            }
+            else
+            {
+                curr->next = head2;
+                curr = curr->next;
+                head2 = head2->next;
+            }
+        }
+
+        if (head1 != nullptr)  curr->next = head1;
+        if(head2 != nullptr) curr->next = head2; 
+        ListNode* result = dummy->next;
+        delete dummy;
+        return result;
+    }
+
+
+    ListNode* sortList(ListNode* head) {
+        if (head == nullptr || head->next == nullptr) return head;
+
+        ListNode* slow = head;
+
+        ListNode* fast = head->next;
+
+        while (fast != nullptr && fast->next != nullptr)
+        {
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+
+        ListNode* houtou = slow->next;
+        slow->next = nullptr;
+
+        ListNode* left = sortList(head);
+        ListNode* right = sortList(houtou);
+
+        return mergeshunxu(left, right);
+
     }
 };
