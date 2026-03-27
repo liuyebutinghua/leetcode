@@ -59,53 +59,232 @@ public:
 
 //2.AI给的解决的代码
 /*
-进阶解法 —— 优先队列 (Priority Queue)
-要解决这道 Hard 题，通常使用的是**“最小堆” (Min Heap)** 思路。
+这道题（LeetCode 23. 合并 K 个升序链表）是无数顶级大厂（字节、腾讯、阿里）面试时的压轴题。
+如果你只用“两两合并”的笨办法去写，时间复杂度会飙升，面试官绝对会让你回去等通知。
 
-直觉： 如果你有 3 个排好序的队列，你想找出最小的那个头。 你不需要把它们全部两两合并。你只需要看这 3 个队列队头的那 3 个数字，谁最小，就把谁拿出来，放到结果里。然后那个被拿走的队列，替补上来下一个数字。
+但既然你已经完全精通了“虚拟头节点（Dummy Node）”，现在我们只需要引入一件跨维度的超级兵器——优先队列（Priority Queue / 小顶堆），就能把这道 Hard 题变成切菜！
 
-这需要一个能快速帮我们“从 K 个数里找出最小值”的数据结构，那就是 C++ STL 的 priority_queue。
+1. 核心思维：K 个队伍的“超级选秀”
+想象一下，操场上有 K 支队伍（链表），每支队伍都已经按身高从矮到高排好了。
+现在你要挑出全场最矮的人，你需要把所有人看一遍吗？
+绝对不需要！ 你只需要把每支队伍的第一个人（排头兵）叫出来，总共就只有 K 个人。这 K 个人里最矮的那个，绝对是全场最矮的！
 
-priority_queue<Type, Container, Comparator> pq;
-1. 它是做什么的？
-priority_queue（优先队列）是一个会自动排序的队列。
+降维打击的“三步选秀法”：
 
-普通队列 (queue)：先入先出 (FIFO)。
+海选入围：把所有 K 个链表的头节点，统统扔进一个小顶堆（Min-Heap）里。小顶堆有一个极度变态的物理特性：无论你怎么往里扔数字，它每次吐出来的绝对是里面最小的那个！
 
-优先队列 (priority_queue)：不管你什么时候塞进去，优先级最高的元素永远排在最前面（堆顶），你可以随时取出来。
+C 位出道：从堆顶弹出一个最小的节点，把它接在我们的 dummy 缝纫机后面。
 
-2. 尖括号里的三个参数详解
-这行代码： priority_queue<ListNode*, vector<ListNode*>, CompareNode> pq; 含义如下：
+小弟顶上（最精妙的一步）：刚才那个最小的节点出列了，那他原来的队伍群龙无首了怎么办？很简单！只要他原来身后还有人（next != nullptr），就把他身后的人立刻塞进小顶堆里，参与下一轮的选秀！
 
-第 1 参数 ListNode*：
+就这样，堆里始终最多只有 K 个人在竞争。谁出列了，他的下一个就顶上。直到所有的队伍全部空了，超级选秀结束！
 
-存什么？ 告诉队列，我要存的是“链表节点的指针”。
+2. C++ 满分神级代码
+在 C++ 里，由于内置的 priority_queue 默认是大顶堆（最大值在上面），所以我们需要自己手写一个小小的“比较器（Comparator）”，让它变成小顶堆。
 
-第 2 参数 vector<ListNode*>：
+看看这段代码，它把你这几天学到的所有链表素养和数据结构完美融合了：
 
-用什么存？ 告诉队列，底层请用 vector 数组来帮我保管这些数据。（这是 C++ 的语法要求，通常默认就是 vector，但当我们需要自定义第 3 个参数时，第 2 个参数必须显式写出来）。
+C++
+#include <vector>
+#include <queue>
 
-第 3 参数 CompareNode (最关键！)：
+using namespace std;
 
-怎么排？ 告诉队列，谁的优先级高？
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ * int val;
+ * ListNode *next;
+ * ListNode() : val(0), next(nullptr) {}
+ * ListNode(int x) : val(x), next(nullptr) {}
+ * ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    // 1. 制定“选秀规则”（比较器）：我们要的是小顶堆，所以重载 () 运算符
+    // 注意：C++ 里的优先队列比较规则有点反直觉，用 '>' 才能排出从小到大的小顶堆
+    struct cmp {
+        bool operator()(ListNode* a, ListNode* b) {
+            return a->val > b->val; 
+        }
+    };
 
-默认情况下，C++ 的优先队列是大顶堆（数字大的在上面）。
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        // 2. 召唤超级兵器：专门装 ListNode* 的小顶堆
+        priority_queue<ListNode*, vector<ListNode*>, cmp> pq;
 
-但我们在合并链表时，需要每次拿出最小的节点。所以我们需要写一个“仿函数”结构体 CompareNode 来告诉它：“值越小，优先级越高”。
+        // 3. 海选入围：把所有非空的排头兵扔进堆里
+        for (ListNode* head : lists) {
+            if (head != nullptr) {
+                pq.push(head);
+            }
+        }
 
-总结
-这句话翻译成大白话就是：
+        // 4. 请出老战友：虚拟头节点（Dummy Node）保平安
+        ListNode* dummy = new ListNode(0);
+        ListNode* curr = dummy;
 
-“嘿 C++，给我建一个优先队列，名字叫 pq。 里面存的是链表节点，底层用 vector 装。 至于排序规则嘛，请按照我写的 CompareNode 来排（让值小的节点排在最前面）！”
+        // 5. 灵魂循环：只要堆里还有人，就继续选秀
+        while (!pq.empty()) {
+            // 拿到当前场上最小的节点（堆顶）
+            ListNode* minNode = pq.top();
+            pq.pop(); // 让它出列
 
-这样，当你执行 pq.pop() 时，它就会自动把当前 K 个节点里数值最小的那个弹出来给你。
+            // 把它接到我们的结果链表后面
+            curr->next = minNode;
+            curr = curr->next; // 缝纫机往前走一步
 
-4. 记忆口诀
-为了防止下次搞混，你可以这样记：
+            // 🌟 核心接力：如果这个出列的节点身后还有小弟，让小弟立刻进堆补位！
+            if (minNode->next != nullptr) {
+                pq.push(minNode->next);
+            }
+        }
 
-在优先队列 (priority_queue) 里： 想把“小”的捧在手心（堆顶），就要“大于”别人。 (Small on top, use Greater)
+        // 6. 完美收官
+        ListNode* result = dummy->next;
+        delete dummy;
+        return result;
+    }
+};
+3. 面试官眼中的满分复杂度
+当你在白板上写完这段代码，面试官一定会问你复杂度，你要极其自信地报出这两组数据：
+
+时间复杂度：O(NlogK)。
+
+N 是所有链表里节点的总个数。因为每个节点都会进堆一次、出堆一次。
+
+每次进堆/出堆的操作，因为堆里最多只有 K 个元素（每支队伍的头），所以堆内部自动排序的时间是 O(logK)。
+
+两者相乘，就是极其优秀的 O(NlogK)！这比暴力的 O(N×K) 快了不知道多少个宇宙。
+
+空间复杂度：O(K)。
+
+我们的额外空间仅仅是那个小顶堆。而这个堆里同时存在的元素最多只有 K 个（每个链表只派出一个代表）。相比于总节点数 N 来说，这个空间开销极小！
+
+
+补充：
+很多初学者看到这个 struct 里套着一个 operator()，都会觉得像见了鬼一样：“这到底是定义了一个结构体，还是写了一个函数？”
+
+别慌，我们把这层神秘的外衣一层层剥开。在这个硬核语法背后，其实藏着 C++ 里一个极其强大且优雅的概念——仿函数（Functor）。
+
+1. 语法解剖：什么是“仿函数”？
+你可以把 struct cmp 想象成一个“披着结构体外衣的函数”。
+
+在 C++ 里，() 其实也是一种运算符（就像 +, -, * 一样）。
+代码里的 bool operator()(ListNode* a, ListNode* b)，意思就是我们重载了括号运算符 ()。
+
+它的神奇魔法在于：
+一旦你这么写了，你就可以用这个 struct 实例化出一个对象，然后像调用普通函数一样去调用这个对象！
+
+C++
+// 正常来说，结构体是这么用的：
+cmp myRule; 
+
+// 但是因为重载了 ()，你可以直接把对象当函数用！
+ListNode* node1 = new ListNode(5);
+ListNode* node2 = new ListNode(2);
+
+bool result = myRule(node1, node2); // 这里就触发了 operator()
+// 此时 result 就是 true，因为 5 > 2
+就因为这种“明明是个对象，却能像函数一样被调用”的特性，C++ 程序员给它取了个极具武侠气息的名字——仿函数。
+
+2. 为什么优先队列（priority_queue）非要用它？
+还记得我们在上一题召唤的超级兵器吗？
+priority_queue<ListNode*, vector<ListNode*>, cmp> pq;
+
+优先队列的工作原理是：每次你扔进去一个东西，它都要和里面的东西比一比大小，然后决定谁排在最上面（堆顶）。
+
+🚨 致命危机出现了：
+如果队列里装的是普通的 int（比如 5 和 2），C++ 闭着眼睛都知道 5 大于 2。
+但是！我们往队列里扔的是什么？是 ListNode*（内存指针）！
+
+如果此时我们不给它定规矩，C++ 就会很傻地去比较这两个节点的内存地址（比如 0x7ffee1 和 0x1a2b3c），这毫无意义！
+
+所以，我们需要派一个“裁判”进去！
+这个 cmp 就是我们专门为优先队列定制的裁判。每次优先队列不知道该把谁放在上面时，它就会把两个节点 a 和 b 扔给裁判（调用 cmp(a, b)）。裁判看看这两个节点肚子里的值（a->val 和 b->val），然后吹哨告诉优先队列谁大谁小。
+
+3. C++ 的终极反逻辑：为什么用 > 反而变成了“小顶堆”？
+这是 C++ 面试中最常被问到的一个坑：
+
+既然是小顶堆（要把最小的放在最上面），为什么代码里写的是 return a->val > b->val; 呢？不应该写 < 吗？
+
+这就要怪 C++ STL 底层源码的“傲娇”设计了。
+在 C++ 的优先队列底层，它的默认逻辑是：“如果裁判认为 a 的优先级不如 b，就把 a 往下沉。”
+
+当我们写 a->val > b->val 时，我们是在告诉系统：“如果 a 的值大于 b 的值，就返回 true（意思是 a 应该被放在 b 的下面）。”
+
+于是，所有值大的节点全都被系统无情地沉到了堆底。
+
+既然大的全沉下去了，那谁漂上来了？值最小的节点自然就漂到了最上面的堆顶！
+
+💡 终极记忆口诀：
+
+在 C++ 的 priority_queue 里写 >（大于号） → 大的往下沉 → 变成小顶堆（最小的在顶部）。
+
+在 C++ 的 priority_queue 里写 <（小于号） → 小的往下沉 → 变成大顶堆（最大的在顶部）。
+
+🏆 顿悟时刻
+现在你完全看懂这段代码了：它就是一个叫 cmp 的“裁判（仿函数）”，被我们强行塞进了优先队列里。它盯着指针里的 val 值，并且用 > 的规则把值大的节点往下踩，硬生生帮我们造出了一个小顶堆！
+
+你能抠出这个底层的语法细节，说明你对 C++ 的掌控力正在飞速提升。
+在数据结构的战场上，链表已经被你杀穿，栈和队列（包括优先队列）你也已经初窥门径。
 */
 
+
+
+//我的代码1：
+class Solution {
+public:
+
+    struct cmp {
+        bool operator()(ListNode* a, ListNode* b)
+        {
+            return a->val > b->val;
+        }
+
+    };
+
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        if (lists.empty()) return nullptr;
+
+        priority_queue<ListNode*, vector<ListNode*>, cmp> my_queue;
+
+        for (ListNode* node : lists)
+        {
+            if (node != nullptr)
+            {
+                my_queue.push(node);
+            }
+            
+        }
+
+        ListNode* dummy = new ListNode(0);
+        ListNode* curr = dummy;
+
+        while (!my_queue.empty())
+        {
+            ListNode* next_node = my_queue.top();
+            curr->next = next_node;
+            curr = curr->next;
+            my_queue.pop();
+
+            if (next_node->next != nullptr)
+            {
+                my_queue.push(next_node->next);
+            }
+        }
+
+        ListNode* result = dummy->next;
+        delete dummy;
+        return result;
+    }
+};
+
+
+
+
+//我的代码2：
 class Solution {
 public:
     // 1. 写一个仿函数（或者用 lambda），告诉优先队列怎么比大小
