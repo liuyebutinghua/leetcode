@@ -70,3 +70,37 @@ public:
         return my_duicheng(root->left, root->right);
     }
 };
+
+
+//我的代码：
+class Solution {
+public:
+
+    bool reversal(TreeNode* left, TreeNode* right)
+    {
+        if (left == nullptr && right == nullptr) return true;
+        else if (left != nullptr && right != nullptr)
+        {
+            if (left->val == right->val)
+            {
+                bool left_bool = reversal(left->left, right->right);
+                bool right_bool = reversal(left->right, right->left);
+                return left_bool && right_bool;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+    }
+
+
+    bool isSymmetric(TreeNode* root) {
+        return reversal(root->left, root->right);
+    }
+};
